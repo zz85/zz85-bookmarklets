@@ -1,2 +1,16 @@
+about:
 my collections of bookmarklets
 http://www.lab4games.net/zz85/blog
+
+project directory:
+/js - where i store my latest javascript bookmarklets
+/experiments - where i test my ideas and scripts
+
+running my latest bookmarklets
+1. test it by running bookmarklet by entering URL address bar
+javascript:document.write('<script src="https://github.com/zz85/zz85-bookmarklets/raw/master/js/PROJECT.js"></script>');
+2. add it to your bookmarks/
+
+lists:
+SimplePad
+javascript:document.write('<script src="https://github.com/zz85/zz85-bookmarklets/raw/master/js/simplepad.js"></script>');

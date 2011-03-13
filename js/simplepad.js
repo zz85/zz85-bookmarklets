@@ -3,6 +3,7 @@
  * on windows for simple plain text editing. 
  * The reason I wrote this is because of my recent usage using a mac 
  * where textedit serves html formatting by default.
+ * Sure, you can use "Switch to Plain text", but I wanted something simplier.
  * This "simplepad" is then great for stripping formatting from text
  * and editing with plain text.
  * If you have a suggession for a better name - easypad, simplepad

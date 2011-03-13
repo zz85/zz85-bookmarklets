@@ -14,3 +14,8 @@ javascript:document.write('<script src="https://github.com/zz85/zz85-bookmarklet
 lists:
 SimplePad
 javascript:document.write('<script src="https://github.com/zz85/zz85-bookmarklets/raw/master/js/simplepad.js"></script>');
+
+
+Ideas:
+- extra minimal + offline + compressed javascript bookmarklet formats
+- dynamic zz85 bookmarklet directory

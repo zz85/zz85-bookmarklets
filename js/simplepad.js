@@ -9,7 +9,8 @@
  * or my original name, bigpad, do let me know.
  *
  * you can run this with javascript:document.write('<textarea style="width:100%;height:100%"></textarea>');
- * or javascript:document.write('<script src="https://github.com/zz85/zz85-bookmarklets/js/simplepad.js"></script>');
+ * or javascript:document.write('<script src="https://github.com/zz85/zz85-bookmarklets/raw/master/js/simplepad.js"></script>');
  *
  * 12 March 2011
+ */
 document.write('<textarea style="width:100%;height:100%"></textarea>');

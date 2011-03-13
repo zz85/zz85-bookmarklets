@@ -6,3 +6,14 @@ javascript:(function(){function add(t,u){var a=document.createElement("a");var t
 Simplepad - Create simple plain-text texture
 javascript:document.write('<textarea style="width:100%;height:100%"></textarea>');
 
+
+Vimeo
+
+javascript:(function(){if(window.location.host.indexOf("vimeo.com")<0)return;var hd="&quality=hd";var u;u=window.location.href.split('/');u=u[u.length-1];if(isNaN(u)){u=window.location.hash;if(u.length>1)u=u.substring(1);if(isNaN(u)||u==""){u=document.getElementById("clip_id");if(u==null)return;u=u.value}}var a,t,h;a=document.getElementById("vdl1");h=document.getElementById("vdl2");if(a==null){a=document.createElement("a");t=document.createTextNode(" [Download] ");a.appendChild(t);a.setAttribute('href',"/play_redirect?clip_id="+u);a.setAttribute('id','vdl1');h=document.createElement("a");t=document.createTextNode(" [HQ] ");h.appendChild(t);h.setAttribute('href',"/play_redirect?clip_id="+u+hd);h.setAttribute('id','vdl2');var b=document.getElementById("pervert");if(b==null)b=document.getElementById("details");if(b==null)b=document.getElementsByTagName("body").item(0);b.appendChild(a);b.appendChild(h)}else{a.setAttribute('href',"/play_redirect?clip_id="+u);h.setAttribute('href',"/play_redirect?clip_id="+u+hd)}})()
+
+Youtube
+javascript:(function(){function add(t,u){var a=document.createElement("a");var t=document.createTextNode(t);a.appendChild(t);a.setAttribute('href',u);var b=document.getElementById("watch-headline-user-info");if(b==null)b=document.getElementsByTagName("body").item(0);b.appendChild(a)}var h=document.getElementsByTagName("embed");for(var i=0;i<h.length;i++){var j=h[i].getAttribute("flashvars").split('&');var k={};for(var c in j){d=j[c].split('=');e=unescape(d[1]);k[d[0]]=e}var l={};var f=k.fmt_url_map.split(',');for(c in f){g=f[c].split('|');l[g[0]]=g[1]}for(c in l){switch(c){case'34':add('[360p FLV] ',l[c]);break;case'35':add('[480p FLV] ',l[c]);break;case'22':add('[720p HD MP4] ',l[c]);break;case'37':add('[1080p HD MP4] ',l[c]);break;default:add('['+c+']',l[c]);break}}}})()
+
+
+Flickr
+javascript:(function(){function run(){$('#sidebar').append($('<a>Link to Pic</a>').attr('href',$('.photo-div').find('img').attr('src')));jQuery.get($('.option-meta').attr('href'),function(data){$('#sidebar').append($(data).find('#exif-right'))})}if(!(window.jQuery)){var s=document.createElement('script');s.setAttribute('src','http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js');s.setAttribute('type','text/javascript');s.onload=run;document.getElementsByTagName('head')[0].appendChild(s)}else{run()}})();

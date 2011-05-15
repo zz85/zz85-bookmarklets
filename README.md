@@ -8,8 +8,8 @@ Bookmarklets are javascript code that can be run from a bookmarklet or in the UR
 To install, create a bookmarklet with the bookmarklet code as its link. You can also run it by entering the code into your browser URL location.
 
 ####  List of Bookmarklets ####
-<a href="SimplePad">
-javascript:(function(){var script=document.createElement('script');script.type='text/javascript';script.src='https://github.com/zz85/zz85-bookmarklets/raw/master/js/simplepad.js';document.body.appendChild(script);})()
+<a href="javascript:(function(){var script=document.createElement('script');script.type='text/javascript';script.src='https://github.com/zz85/zz85-bookmarklets/raw/master/js/simplepad.js';document.body.appendChild(script);})()">
+SimplePad
 </a>
 
 

@@ -33,7 +33,8 @@ Dyslexia Scramble
 
 `javascript:(function(){var script=document.createElement('script');script.type='text/javascript';script.src='https://github.com/zz85/zz85-bookmarklets/raw/master/js/scramble.js';document.body.appendChild(script);})()`
 
-
+Image Encoder
+`javascript:(function(){var script=document.createElement('script');script.type='text/javascript';script.src='https://github.com/zz85/zz85-bookmarklets/raw/master/js/imgencoder.js';document.body.appendChild(script);})()`
 
 ####  Ideas to be implemented ####
 - dynamic zz85 bookmarklet directory

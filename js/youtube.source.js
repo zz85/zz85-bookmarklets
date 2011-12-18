@@ -8,8 +8,7 @@
         a.setAttribute('href', u);
         var b = document.getElementById("watch-headline-user-info");
         if (b == null) {
-            b = document.getElementsByTagName("body").item(0);
-            document.body.insertBefore(a,b);
+            document.body.parentNode.insertBefore(a,document.body);
         } else
         b.appendChild(a);
     }
@@ -50,18 +49,6 @@
         url = fmt.substring(0, fmt.indexOf("fallback_host") - 1);
         url = unescape(unescape(url));
 
-        /*
-        if (fmt.indexOf("rl=") > 0) {
-            console.log('ping' , fmt);
-            url = fmt.substring(4, fmt.indexOf("fallback_host") - 1);
-            url = unescape(unescape(url));
-        } 
-        else {
-            console.log('pong' , fmt);
-            url = fmt.substring(0, fmt.indexOf("fallback_host") - 1);
-            url = unescape(unescape(url));
-        }*/
-        
         var code = getCode(url);
         
         switch (code) {

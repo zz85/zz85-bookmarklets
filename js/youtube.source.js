@@ -1,39 +1,69 @@
 (function() {
 
-    function add(a, b) {
-        var c = document.createElement("a"), a = document.createTextNode(a);
-        c.appendChild(a), c.setAttribute("href", b);
-        var d = document.getElementById("watch-headline-user-info");
-        d == null && (d = document.getElementsByTagName("body").item(0)), d.appendChild(c);
-    }
 
-    function getCode(a) {
-        var b = a.split("&");
-        for (var c = 0; c < b.length; c++) {
-            var d = b[c].split("=");
-            if (d[0] == "itag") return parseInt(d[1]);
+    function add(t, u) {
+        var a = document.createElement("a");
+        var t = document.createTextNode(t);
+        a.appendChild(t);
+        a.setAttribute('href', u);
+        var b = document.getElementById("watch-headline-user-info");
+        if (b == null) {
+            b = document.getElementsByTagName("body").item(0);
+            document.body.insertBefore(a,b);
+        } else
+        b.appendChild(a);
+    }
+    
+    
+    function getCode(url) {
+        var str = url.split("&");
+        for (var i = 0; i < str.length; i++) {
+            var temp = str[i].split("=");
+            if (temp[0] == "itag")
+                return parseInt(temp[1]);
         }
         return 0;
     }
 
-    var swfHTML = document.getElementById("movie_player").getAttribute("flashvars");
 
-    swfHTML || (swfHTML = document.getElementById("movie_player").getElementsByTagName("param")[1].value);
+    var mplayer = document.getElementById("movie_player"),
+        
+    swfHTML = mplayer.getAttribute("flashvars");
+
+    swfHTML || (swfHTML = mplayer.getElementsByTagName("param")[1].value);
 
     var destoryPlayer = true;
 
     var w = swfHTML.split("&");
 
-    for (i = 0; i <= w.length - 1; i++) if (w[i].split("=")[0] == "url_encoded_fmt_stream_map") {
-        links = unescape(w[i].split("=")[1]);
-        break;
+    for (i = 0; i <= w.length - 1; i++) {
+        if (w[i].split("=")[0] == "url_encoded_fmt_stream_map") {
+            links = unescape(w[i].split("=")[1]);
+            break;
+        }
     }
 
     var abc = links.split(",url=");
 
     for (i = 0; i <= abc.length - 1; i++) {
-        fmt = abc[i].split("|")[0], fmt.indexOf("rl=") > 0 ? (url = fmt.substring(4, fmt.indexOf("fallback_host") - 1), url = unescape(unescape(url))) : (url = fmt.substring(0, fmt.indexOf("fallback_host") - 1), url = unescape(unescape(url)));
+        fmt = abc[i].split("|")[0];
+        url = fmt.substring(0, fmt.indexOf("fallback_host") - 1);
+        url = unescape(unescape(url));
+
+        /*
+        if (fmt.indexOf("rl=") > 0) {
+            console.log('ping' , fmt);
+            url = fmt.substring(4, fmt.indexOf("fallback_host") - 1);
+            url = unescape(unescape(url));
+        } 
+        else {
+            console.log('pong' , fmt);
+            url = fmt.substring(0, fmt.indexOf("fallback_host") - 1);
+            url = unescape(unescape(url));
+        }*/
+        
         var code = getCode(url);
+        
         switch (code) {
           case 37:
             add("[HD 1080p MP4]", url);
@@ -50,23 +80,23 @@
           case 35:
             add("[Medium 480p FLV]", url);
             break;
-            /*
           case 44:
-            add("[Large FLV]", url);
+            add("[Medium 480p WebM]", url);
             break;
           case 43:
-            add("[Medium FLV]", url);
-            break;*/
+            add("[Medium 360p WebM]", url);
+            break;
           case 34:
             add("[Medium 360p FLV]", url);
             break;
           case 18:
             add("[Low 270p MP4]", url);
             break;
+          case 5:
+            add("[Low 226p FLV]", url);
+            break;
           default:
             add("[" + code + "]", url);
-          case 5:
-            add("[Low FLV]", url);
         }
     }
 

@@ -15,12 +15,12 @@ SimplePad
 
 Vimeo HD Video Downloader
 
-`javascript:(function(){var script=document.createElement('script');script.type='text/javascript';script.src='https://github.com/zz85/zz85-bookmarklets/raw/master/js/youtube.js';document.body.appendChild(script);})()`
+`javascript:(function(){var script=document.createElement('script');script.type='text/javascript';script.src='https://github.com/zz85/zz85-bookmarklets/raw/master/js/vimeo.js';document.body.appendChild(script);})()`
 
 
 Youtube HD Video Downloader
 
-`javascript:(function(){var script=document.createElement('script');script.type='text/javascript';script.src='https://github.com/zz85/zz85-bookmarklets/raw/master/js/vimeo.js';document.body.appendChild(script);})()`
+`javascript:(function(){var script=document.createElement('script');script.type='text/javascript';script.src='https://github.com/zz85/zz85-bookmarklets/raw/master/js/youtube.js';document.body.appendChild(script);})()`
 
 
 Backwards (en/de)Coder

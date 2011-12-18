@@ -1,6 +1,5 @@
 (function() {
 
-
     function add(t, u) {
         var a = document.createElement("a");
         var t = document.createTextNode(t);
@@ -12,7 +11,6 @@
         } else
         b.appendChild(a);
     }
-    
     
     function getCode(url) {
         var str = url.split("&");
@@ -46,9 +44,19 @@
 
     for (i = 0; i <= abc.length - 1; i++) {
         fmt = abc[i].split("|")[0];
-        url = fmt.substring(0, fmt.indexOf("fallback_host") - 1);
-        url = unescape(unescape(url));
 
+        if (fmt.indexOf("rl=") > 0) {
+            console.log('ping' , fmt);
+            url = fmt.substring(4, fmt.indexOf("fallback_host") - 1);
+            url = unescape(unescape(url));
+            
+            if (url[0]==":") url = "http" + url;
+        } 
+        else {
+            url = fmt.substring(0, fmt.indexOf("fallback_host") - 1);
+            url = unescape(unescape(url));
+        }
+        
         var code = getCode(url);
         
         switch (code) {

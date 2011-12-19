@@ -1,10 +1,10 @@
 (function() {
 
-    function add(t, u) {
+    function add(t, u, title) {
         var a = document.createElement("a");
         var t = document.createTextNode(t);
         a.appendChild(t);
-        a.setAttribute('href', u);
+        a.setAttribute('href', u + "&title="+ title);
         var b = document.getElementById("watch-headline-user-info");
         if (b == null) {
             document.body.parentNode.insertBefore(a,document.body);
@@ -59,39 +59,41 @@
         
         var code = getCode(url);
         
+        var title = ((((document.title.replace('#',' ')).replace('@',' ')).replace('*',' ')).replace('|',' ')).replace(':',' ');
+        
         switch (code) {
           case 37:
-            add("[HD 1080p MP4]", url);
+            add("[HD 1080p MP4]", url, title);
             break;
           case 22:
-            add("[HD 720p MP4]", url);
+            add("[HD 720p MP4]", url, title);
             break;
           case 46:
-            add("[HD 1080p FLV]", url);
+            add("[HD 1080p WebM]", url, title);
             break;
           case 45:
-            add("[HD 720p FLV]", url);
+            add("[HD 720p WebM]", url, title);
             break;
           case 35:
-            add("[Medium 480p FLV]", url);
+            add("[Medium 480p FLV]", url, title);
             break;
           case 44:
-            add("[Medium 480p WebM]", url);
+            add("[Medium 480p WebM]", url, title);
             break;
           case 43:
-            add("[Medium 360p WebM]", url);
+            add("[Medium 360p WebM]", url, title);
             break;
           case 34:
-            add("[Medium 360p FLV]", url);
+            add("[Medium 360p FLV]", url, title);
             break;
           case 18:
-            add("[Low 270p MP4]", url);
+            add("[Low 270p MP4]", url, title);
             break;
           case 5:
-            add("[Low 226p FLV]", url);
+            add("[Low 226p FLV]", url, title);
             break;
           default:
-            add("[" + code + "]", url);
+            add("[" + code + "]", url, title);
         }
     }
 

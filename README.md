@@ -1,6 +1,7 @@
 ####  About ####
-my collections of bookmarklets
-http://www.lab4games.net/zz85/blog
+my collections of bookmarklets originally from http://www.lab4games.net/zz85/blog
+
+Head over to http://zz85.github.com/zz85-bookmarklets/
 
 ####  What are they? ####
 Bookmarklets are javascript code that can be run from a bookmarklet or in the URL. It adds functionality to sites you visit in your browser without the need for add-ons or plugins installations.

@@ -45,6 +45,6 @@ Image Encoder
 
 
 ####  Project directory ####
-Its a little messy in here, so head in only if you're curious and adventureous
+Its a little messy in here, so head in only if you're curious and adventurous
 /js - where i store my latest javascript bookmarklets
 /experiments - where i test my ideas and scripts

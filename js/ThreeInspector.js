@@ -22,16 +22,18 @@
  *	Updating of values into scene graph, YEAH!
  *	Scrubber interface for changing values!!
  *	X-axis scrubber for big value changes!
- *	Disabled x-axis for usabiltiy - maybe use a keyboard shortcut?
+ *	Disabled x-axis for some usabiltiy - maybe use a keyboard shortcut?
+ *	added toggle autorefresh values
+ *	added maxwait of 10 seconds
  *
  *	TODO
- *	- refresh values
- *	- watch / poll / bind values
+ *	- poll/bind add/remove changes?
  *	- materials
- * 	- geometry / faces / verticles count
- *	- better layout
- * 
+ * 	- geometry / faces / vertices count
+ *	- create a properties side window? - and move inspecting properties into it?
+ *	- integrate gui + director.js
  */
+
 (function() {
 
 function scanWindow() {
@@ -48,6 +50,11 @@ function scanWindow() {
 	var sceneReferences = [];
 	var aScene, children;
 
+	autoUpdateDiv = document.createElement('div');
+	autoUpdateDiv.innerHTML = '<a>Toggle Autorefresh All</a>';
+	autoUpdateDiv.onclick = autoRefresh;
+	
+	ThreeInspectorWidget.contents.appendChild(autoUpdateDiv);
 
 	for (var w in window) {
 		// Search for scenes
@@ -58,9 +65,7 @@ function scanWindow() {
 			aScene = window[w];
 			sceneReferences.push(aScene);
 			children = aScene.children;
-			
-			// console.log('Scene found: ', w, scene );
-			
+						
 			var ul = document.createElement('ul');
 			ul.innerHTML = ' &lt;THREE.Scene&gt; <span class="threeInspectorChildrenBubble">' + children.length + '</span> children';
 			
@@ -68,7 +73,6 @@ function scanWindow() {
 			var expander = document.createElement('a');
 			expander.innerHTML = '+ <b>' + w + '</b>';
 			expander.onclick = expandScene(ul, aScene, w);
-			// ul.appendChild(expander);
 			ul.insertBefore(expander, ul.firstChild);
 						
 			var debug = document.createElement('a');
@@ -99,17 +103,53 @@ function debugObject(obj) {
 	};
 }
 
-function refreshValues() {
-	
+
+
+
+var watchBindings = [];
+var autoRefreshing;
+
+function registerBindings(target, property, view) {
+	watchBindings.push({target:target, property:property, view:view});
 }
 
+function refreshValues() {
+	var c = 0, start = Date.now();
+
+	// console.log('refresh!');
+	
+	var target, property, view, subscription, value;
+	for (var i=0, il=watchBindings.length;i<il;i++) {
+		subscription = watchBindings[i];
+		target = subscription.target;
+		property = subscription.property;
+		view = subscription.view;
+		
+		value = target[property];
+
+		if (value!=view.value) {
+			view.value = value;
+			// c++;
+		}
+		
+	}
+	// console.log('refreshed!',c, Date.now() - start);
+}
+
+function autoRefresh() {
+	if (autoRefreshing) {
+		clearInterval(autoRefreshing);
+		autoRefreshing = null;
+	} else {
+		autoRefreshing = setInterval(refreshValues, 300);
+	}	
+}
 	
 function expandScene(ul, scene, w) {
 	
 	return function() {
-		if (!ul.inspected) {
+		if (!ul._inspected) {
 			// load children
-			ul.inspected = true;
 			inspectChildren(scene, ul, w);
 			return;
 		}
@@ -143,14 +183,14 @@ function updateNameCallback(nameField, target) {
 	};
 }
 
-
-
 function valueChangeCallback(target, property, view) {
 	return function(e) {
 		// console.log('value changed!',e, target);
 		target[property] = parseFloat(view.value);
 	};
 }
+
+
 
 
 function createField(object, property) {
@@ -160,6 +200,8 @@ function createField(object, property) {
 	valueField.value = object[property];
 	
 	valueField.onchange = valueChangeCallback(object, property, valueField);
+	
+	registerBindings(object, property, valueField);
 	
 	var y, x;
 	var downY, downX, downValue, number;
@@ -197,7 +239,6 @@ function createField(object, property) {
 	}	
 	
 	function onMouseUp(event) {
-		// console.log('mouseup', event);
 		document.removeEventListener( 'mousemove',  onMouseMove, false );
 		document.removeEventListener( 'mouseup',  onMouseUp, false );
 		
@@ -217,10 +258,25 @@ function createField(object, property) {
 function inspectChildren(scene, dom, variable) {
 	
 	var i,il;
+	var maxWait = 10 * 1000; // 10 seconds wait
 	
 	var children = scene.children, child;
 	
-	for (i=0, il=children.length;i<il;i++) {
+	var startTime = Date.now();
+	
+	if (!dom._lastInspected) {
+		dom._lastInspected = 0;
+	}
+	
+	for (i=dom._lastInspected, il=children.length;i<il;i++) {
+		
+		if ((Date.now()-startTime)>maxWait) {
+			// We break out of loops if the wait is too long for ultra long lists.
+			dom._lastInspected = i;
+			// TODO, add a continue button or signal
+			// Then again, probably we should only "inspect" items being clicked on for best performance
+			return;
+		}
 		
 		child = children[i];
 		
@@ -254,6 +310,7 @@ function inspectChildren(scene, dom, variable) {
 					break;
 				}
 			}
+			// Perhaps we could use the auto generated ID as name
 			
 		}
 		
@@ -299,10 +356,23 @@ function inspectChildren(scene, dom, variable) {
 
 		if (isSprite) {
 			d = document.createElement('li');
-			d.innerHTML = 'rotation: ';
+			d.innerHTML = 'rotation:';
+			d.appendChild(createField(child, 'rotation'));
+			objectProps.appendChild(d);
+			
+			d = document.createElement('li');
+			d.innerHTML = 'rotation3d:';
 			d.appendChild(createField(child.rotation3d, 'x'));
 			d.appendChild(createField(child.rotation3d, 'y'));
 			d.appendChild(createField(child.rotation3d, 'z'));
+			
+			objectProps.appendChild(d);
+		}
+		
+		if (child.opacity !== undefined) {
+			d = document.createElement('li');
+			d.innerHTML = 'opacity: &nbsp;';
+			d.appendChild(createField(child, 'opacity'));
 			objectProps.appendChild(d);
 		}
 
@@ -346,10 +416,6 @@ function inspectChildren(scene, dom, variable) {
 			d.appendChild(createField(child.scale, 'z'));
 			
 			objectProps.appendChild(d);
-						
-			// console.log('position', child.position.x, child.position.y, child.position.z);
-			// console.log('rotation', child.rotation.x, child.rotation.y, child.rotation.z);
-			// console.log('scale', child.scale.x, child.scale.y, child.scale.z);
 			// console.log('material', child.material);
 			
 			// inspectChildren(child);
@@ -373,6 +439,8 @@ function inspectChildren(scene, dom, variable) {
 		dom.appendChild(li);
 		
 	}
+	
+	dom._inspected = true;
 }
 
 // Windowing Widget experiment
@@ -512,9 +580,7 @@ function Widget(title, id) {
 		close.onclick = this.close;
 		
 		var min = document.createElement('a');
-		min.innerHTML = ' &ndash; '; //&darr; _ - &oline; &not;  &macr; &mdash; &ndash; ↕↯⇅
-		// see http://www.yellowpipe.com/yis/tools/ASCII-HTML-Characters/index.php
-		// http://www.yellowpipe.com/yis/tools/ASCII-HTML-Characters/index.php
+		min.innerHTML = ' &ndash; ';
 		min.onclick = this.toggle;
 		
 		var span = document.createElement('span');
@@ -663,5 +729,6 @@ window.ThreeInspectorWidget = new Widget('Three.js Scene Insepector', 'threeInsp
 // TODO destory ThreeInspector correctly.
 
 scanWindow();
+autoRefresh();
 
 })();

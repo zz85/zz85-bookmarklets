@@ -1,7 +1,7 @@
 /*
  * We have Web Inspectors (Firebug, Developer Tools, Dragonfly etc)
  * We have WebGL Inspector
- * Shouldn't we have a Three.js Secene Inspector?
+ * Shouldn't we have a Three.js Inspector
  *
  * Want to know how to use this? Visit http://zz85.github.com/zz85-bookmarklets/
  *
@@ -19,25 +19,35 @@
  *	prevent select
  * 	close / minimize widget
  *	improvements to interface and layout
+ *	("smart" expansion + debug to console ++)
  *	Updating of values into scene graph, YEAH!
  *	Scrubber interface for changing values!!
  *	X-axis scrubber for big value changes!
  *	Disabled x-axis for some usabiltiy - maybe use a keyboard shortcut?
  *	added toggle autorefresh values
  *	added maxwait of 10 seconds
+ *	Title typo correction by @mrdoob
+ *	Add rescan Scenes
  *
  *	TODO
  *	- poll/bind add/remove changes?
- *	- materials
- * 	- geometry / faces / vertices count
+ *	- materials editor
+ *	- geometry editor
+ *	- shape editor
+ * 	- Stats: geometry / faces / vertices count
  *	- create a properties side window? - and move inspecting properties into it?
  *	- integrate gui + director.js
+ *	- color picker for lights, materials
+ *	- create interactive examples for three.js
  */
 
 (function() {
 
-function scanWindow() {
 
+var autoUpdateDiv;
+
+function scanWindow() {
+	
 	if (typeof(THREE) == 'undefined') {
 		ThreeInspectorWidget.setStatus('Three.js not found.');
 		ThreeInspectorWidget.add('Three.js not found.');
@@ -50,11 +60,18 @@ function scanWindow() {
 	var sceneReferences = [];
 	var aScene, children;
 
-	autoUpdateDiv = document.createElement('div');
-	autoUpdateDiv.innerHTML = '<a>Toggle Autorefresh All</a>';
+	autoUpdateDiv = document.createElement('span');
+	autoUpdateDiv.innerHTML = 'Auto-Refresh Values: <a class="threeInspectorChildrenBubble">ON</a>. ';
 	autoUpdateDiv.onclick = autoRefresh;
 	
 	ThreeInspectorWidget.contents.appendChild(autoUpdateDiv);
+	
+	var divRescan = document.createElement('span');
+	divRescan.innerHTML = '| <a>Rescan All Scenes</a>'; // RELOAD ALL SCENES
+	divRescan.onclick = ThreeInspector.start;
+	
+	ThreeInspectorWidget.contents.appendChild(divRescan);
+	
 
 	for (var w in window) {
 		// Search for scenes
@@ -103,9 +120,6 @@ function debugObject(obj) {
 	};
 }
 
-
-
-
 var watchBindings = [];
 var autoRefreshing;
 
@@ -140,8 +154,11 @@ function autoRefresh() {
 	if (autoRefreshing) {
 		clearInterval(autoRefreshing);
 		autoRefreshing = null;
+		autoUpdateDiv.innerHTML = 'Auto-Refresh Values: <a class="threeInspectorChildrenBubble">OFF</a> ';
+		
 	} else {
 		autoRefreshing = setInterval(refreshValues, 300);
+		autoUpdateDiv.innerHTML = 'Auto-Refresh Values: <a class="threeInspectorChildrenBubble">ON</a> ';
 	}	
 }
 	
@@ -353,7 +370,9 @@ function inspectChildren(scene, dom, variable) {
 			isObject = (child instanceof THREE.Object3D),
 			isSprite = (child instanceof THREE.Sprite)
 			;
-
+			
+		var d;
+					
 		if (isSprite) {
 			d = document.createElement('li');
 			d.innerHTML = 'rotation:';
@@ -379,8 +398,6 @@ function inspectChildren(scene, dom, variable) {
 		
 		if (isObject) {
 			
-			var d;
-			
 			// Position
 			
 			d = document.createElement('li');
@@ -388,7 +405,7 @@ function inspectChildren(scene, dom, variable) {
 			d.innerHTML = 'position: ';
 			
 			var posX = createField(child.position, 'x');
-			var posY = createField(child.position, 'y'); //.toFixed(3)
+			var posY = createField(child.position, 'y');
 			var posZ = createField(child.position, 'z');
 			
 			d.appendChild(posX);
@@ -417,19 +434,16 @@ function inspectChildren(scene, dom, variable) {
 			
 			objectProps.appendChild(d);
 			// console.log('material', child.material);
-			
-			// inspectChildren(child);
+
 		}
 		
 		if (haveChildren) {
 			var ul = document.createElement('ul');
-			// ul.innerHTML = ;
 			
 			var expander = document.createElement('a');
 			expander.innerHTML = '+' + noOfChildren;
 			expander.onclick = expandScene(ul, child, name);
 			ul.appendChild(expander);
-			// ul.insertBefore(expander, ul.firstChild);
 			
 			objectProps.appendChild(ul);
 		}
@@ -557,7 +571,6 @@ function Widget(title, id) {
 			currentLeft = startLeft + (e.clientX  - x)
 		}
 
-
 		divWidget.style.left = currentLeft + 'px';
 		divWidget.style.top = currentTop + 'px';
 
@@ -658,77 +671,97 @@ function Widget(title, id) {
 
 // Main entry
 
-var styles = '\
-	#threeInspectorWidget {\
-		cursor:default;\
-	}\
-	#threeInspectorWidget a {\
-		text-decoration: none;\
-		cursor:pointer;\
-	}\
-	#threeInspectorWidget ul {\
-		list-style: none; padding-left: 10px;\
-		padding-top:0; }\
-	#threeInspectorWidget li {\
-		padding-left: 10px;\
-		padding-top:0;\
-		padding-bottom: 0\
-	}\
-	\
-	.threeInspectorChildrenBubble {\
-		border-radius: 4px;\
-		background-color: rgba(100, 100, 100, 0.8);\
-		color: rgb(220, 220,220);\
-		padding: 0 3px 0 3px;\
-	}\
-	.threeInspectorNameField {\
+var ThreeInspector = {}, ThreeInspectorWidget;
+
+ThreeInspector.start = function() {
+	var styles = '\
+		#threeInspectorWidget {\
+			cursor:default;\
+		}\
+		#threeInspectorWidget a {\
+			text-decoration: none;\
+			cursor:pointer;\
+		}\
+		#threeInspectorWidget ul {\
+			list-style: none; padding-left: 10px;\
+			padding-top:0; }\
+		#threeInspectorWidget li {\
+			padding-left: 10px;\
+			padding-top:0;\
+			padding-bottom: 0\
+		}\
 		\
-		font-weight: bold;\
-		padding: 0 4px 0 4px;\
-		background:transparent;\
-		resize:none;\
-		border: 0;\
-		width: 50px;\
-		border-bottom: 1px dotted #bbb;\
-	}\
-	.threeInspectorNameField:hover {\
+		.threeInspectorChildrenBubble {\
+			border-radius: 4px;\
+			background-color: rgba(100, 100, 100, 0.8);\
+			color: rgb(220, 220,220);\
+			padding: 0 3px 0 3px;\
+		}\
+		.threeInspectorNameField {\
+			\
+			font-weight: bold;\
+			padding: 0 4px 0 4px;\
+			background:transparent;\
+			resize:none;\
+			border: 0;\
+			width: 50px;\
+			border-bottom: 1px dotted #bbb;\
+		}\
+		.threeInspectorNameField:hover {\
+			\
+			border-bottom: 1px dotted grey;\
+		}\
+		.threeInspectorValueField {\
+			border-radius: 4px;\
+			background-color: rgba(244, 100, 200, 0.8);\
+			color: rgb(220, 220,220);\
+			padding: 0 3px 0 3px;\
+			margin: 0 3px 0 3px;\
+			resize:none;\
+			border: 0;\
+			width: 50px;\
+			cursor:row-resize;\
+		}\
+		#threeInspectorWidget input:focus {\
+			outline: none;\
+		}\
 		\
-		border-bottom: 1px dotted grey;\
-	}\
-	.threeInspectorValueField {\
-		border-radius: 4px;\
-		background-color: rgba(244, 100, 200, 0.8);\
-		color: rgb(220, 220,220);\
-		padding: 0 3px 0 3px;\
-		margin: 0 3px 0 3px;\
-		resize:none;\
-		border: 0;\
-		width: 50px;\
-		cursor:row-resize;\
-	}\
-	#threeInspectorWidget input:focus {\
-		outline: none;\
-	}\
-	\
-	#threeInspectorWidget li.threeInspectorSceneObject {\
-		padding-top: 6px;\
-	}\
-	\
-';
+		#threeInspectorWidget li.threeInspectorSceneObject {\
+			padding-top: 6px;\
+		}\
+		\
+	';
 
 
 
-var style = document.createElement('style');
-style.innerHTML = styles;
-document.body.appendChild(style);
+	var style = document.createElement('style');
+	style.innerHTML = styles;
+	document.body.appendChild(style);
 
-if (window.ThreeInspectorWidget) {
-	window.ThreeInspectorWidget.close();
+	// Destory previous copy of ThreeInspector.
+	if (window.ThreeInspector) {
+		window.ThreeInspector.destory();
+	}
+	
+	ThreeInspectorWidget = new Widget('Three.js Scene Inspector', 'threeInspectorWidget');
+	scanWindow();
+	autoRefresh();
+	
+	// Inject this copy into window.ThreeInspector namespace
+	window.ThreeInspector = ThreeInspector;
+	
+};
+
+//  Destory ThreeInspector. Stop timers. Close widgets.
+ThreeInspector.destory = function() {
+	ThreeInspectorWidget.close();
+	if (autoRefreshing) {
+		clearInterval(autoRefreshing);
+		autoRefreshing = null;
+	}
 }
-window.ThreeInspectorWidget = new Widget('Three.js Scene Insepector', 'threeInspectorWidget');
-// TODO destory ThreeInspector correctly.
 
-scanWindow();
-autoRefresh();
+
+ThreeInspector.start();
 
 })();

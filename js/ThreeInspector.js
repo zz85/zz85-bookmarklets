@@ -28,23 +28,27 @@
  *	added maxwait of 10 seconds
  *	Title typo correction by @mrdoob
  *	Add rescan Scenes
+ *	Open inspector in new window - however css bugs in webkit!
+ *	add link for feature requests
  *
  *	TODO
  *	- poll/bind add/remove changes?
- *	- materials editor
- *	- geometry editor
- *	- shape editor
  * 	- Stats: geometry / faces / vertices count
  *	- create a properties side window? - and move inspecting properties into it?
  *	- integrate gui + director.js
  *	- color picker for lights, materials
  *	- create interactive examples for three.js
+ *	- use css for collapsing and expanding divs?
+ *	- materials editor
+ *	- geometry editor
+ *	- shape editor
  */
 
 (function() {
 
 
 var autoUpdateDiv;
+var targetDom; 
 
 function scanWindow() {
 	
@@ -59,6 +63,22 @@ function scanWindow() {
 	var sceneNames = [];
 	var sceneReferences = [];
 	var aScene, children;
+	
+	
+	var divNewWindow = document.createElement('span');
+	divNewWindow.innerHTML = '<a>Open in New Window</a> ';
+	divNewWindow.onclick = function(){
+		ThreeInspector.newWindow = true;
+		ThreeInspector.start();
+	};
+	
+	ThreeInspectorWidget.contents.appendChild(divNewWindow);
+
+	var divRequests = document.createElement('span');
+	divRequests.innerHTML = '| <a href="https://github.com/zz85/zz85-bookmarklets/issues" target="_blank">Feature requests</a><br/>';
+	
+	ThreeInspectorWidget.contents.appendChild(divRequests);
+	
 
 	autoUpdateDiv = document.createElement('span');
 	autoUpdateDiv.innerHTML = 'Auto-Refresh Values: <a class="threeInspectorChildrenBubble">ON</a>. ';
@@ -67,12 +87,11 @@ function scanWindow() {
 	ThreeInspectorWidget.contents.appendChild(autoUpdateDiv);
 	
 	var divRescan = document.createElement('span');
-	divRescan.innerHTML = '| <a>Rescan All Scenes</a>'; // RELOAD ALL SCENES
+	divRescan.innerHTML = '| <a>Rescan All Scenes</a><br/>';
 	divRescan.onclick = ThreeInspector.start;
 	
 	ThreeInspectorWidget.contents.appendChild(divRescan);
 	
-
 	for (var w in window) {
 		// Search for scenes
 		
@@ -223,8 +242,8 @@ function createField(object, property) {
 	var y, x;
 	var downY, downX, downValue, number;
 	
-	var multiplierY = 0.1;
-	var multiplierX = 4;
+	var multiplierY = 0.05;
+	var multiplierX = 0.01;
 	
 	function onMouseDown(event) {
 		// EEKS!
@@ -236,8 +255,8 @@ function createField(object, property) {
 		downX = x;
 		downValue = parseFloat(valueField.value);
 
-		document.addEventListener( 'mousemove',  onMouseMove, false );
-		document.addEventListener( 'mouseup',  onMouseUp, false );
+		targetDom.addEventListener( 'mousemove',  onMouseMove, false );
+		targetDom.addEventListener( 'mouseup',  onMouseUp, false );
 		
 		return false;
 	}
@@ -248,16 +267,20 @@ function createField(object, property) {
 		y = event.clientY;
 		x = event.clientX;
 		
+		// var scrub = (x - downX) * multiplierX;
+		// if (scrub<1) scrub = 1;
+		// if (scrub>100) scrub = 100;
+		
 		number = downValue - (y - downY) * multiplierY;
-		// + (x - downX) * multiplierX;
+		//  * scrub
 		valueField.value = number;
 		valueField.onchange();
 		//return false;
 	}	
 	
 	function onMouseUp(event) {
-		document.removeEventListener( 'mousemove',  onMouseMove, false );
-		document.removeEventListener( 'mouseup',  onMouseUp, false );
+		targetDom.removeEventListener( 'mousemove',  onMouseMove, false );
+		targetDom.removeEventListener( 'mouseup',  onMouseUp, false );
 		
 		onMouseMove(event);
 		// valueField.focus();
@@ -290,7 +313,7 @@ function inspectChildren(scene, dom, variable) {
 		if ((Date.now()-startTime)>maxWait) {
 			// We break out of loops if the wait is too long for ultra long lists.
 			dom._lastInspected = i;
-			// TODO, add a continue button or signal
+			ThreeInspectorWidget.setStatus("Time out loading children...");
 			// Then again, probably we should only "inspect" items being clicked on for best performance
 			return;
 		}
@@ -455,13 +478,15 @@ function inspectChildren(scene, dom, variable) {
 	}
 	
 	dom._inspected = true;
+	ThreeInspectorWidget.setStatus("");
 }
 
 // Windowing Widget experiment
 
-function Widget(title, id) {
+function Widget(title, id, targetDom) {
 	
 	var me = this;
+	targetDom = (targetDom === undefined) ? document.body : targetDom;
 	
 	var cssWidget = 
 		'border: 1px solid rgba(100,100,100,0.5);\
@@ -547,7 +572,7 @@ function Widget(title, id) {
 		offsetFromBottom = divWidget.clientHeight - offsetY;
 		offsetFromRight = divWidget.clientWidth - offsetX;
 
-		document.addEventListener('mousemove', onMouseMove, false);
+		targetDom.addEventListener('mousemove', onMouseMove, false);
 		
 		return false;
 	}
@@ -578,7 +603,7 @@ function Widget(title, id) {
 	}
 
 	function onMouseUp(e) {
-		document.removeEventListener('mousemove', onMouseMove, false);
+		targetDom.removeEventListener('mousemove', onMouseMove, false);
 		return false;
 	}
 	
@@ -651,13 +676,13 @@ function Widget(title, id) {
 	this.close = function() {
 		if (me.isClosed) return;
 		
-		document.body.removeChild(divWidget);
+		targetDom.body.removeChild(divWidget);
 		delete this;
 		
 		me.isClosed = true;
 	}
 	
-	document.body.appendChild(divWidget);
+	targetDom.body.appendChild(divWidget);
 	
 	this.contents = divWidgetContent;
 	this.div = divWidget;
@@ -698,7 +723,6 @@ ThreeInspector.start = function() {
 			padding: 0 3px 0 3px;\
 		}\
 		.threeInspectorNameField {\
-			\
 			font-weight: bold;\
 			padding: 0 4px 0 4px;\
 			background:transparent;\
@@ -733,27 +757,68 @@ ThreeInspector.start = function() {
 	';
 
 
-
-	var style = document.createElement('style');
-	style.innerHTML = styles;
-	document.body.appendChild(style);
-
 	// Destory previous copy of ThreeInspector.
 	if (window.ThreeInspector) {
 		window.ThreeInspector.destory();
+		newWindow = true;
 	}
 	
-	ThreeInspectorWidget = new Widget('Three.js Scene Inspector', 'threeInspectorWidget');
+	if (ThreeInspector.newWindow) {
+		
+		// new window
+		var opener = window.open('','threeInspectorWindow',
+		  'width=800,height=400'
+		   +',menubar=no'
+		   +',toolbar=no'
+		   +',status=no'
+		   +',location=no'
+		   +',scrollbars=no'
+		   +',resizable=yes');
+		// left=
+
+		// opener.focus();
+		targetDom = opener.document;
+
+		var style = document.createElement('style');
+		style.innerHTML = styles;
+		targetDom.body.appendChild(style);
+
+		ThreeInspectorWidget = new Widget('Three.js Scene Inspector', 'threeInspectorWidget', targetDom);
+		ThreeInspectorWidget.setPosition(0,0);
+		ThreeInspectorWidget.setSize(780, 380);
+
+		opener.document.close();
+		
+		ThreeInspector.opener = opener;
+		
+	
+	} else {
+		
+		targetDom = document;
+		
+		
+		var style = document.createElement('style');
+		style.innerHTML = styles;
+		targetDom.body.appendChild(style);
+		ThreeInspectorWidget = new Widget('Three.js Scene Inspector', 'threeInspectorWidget', targetDom);
+		
+	}
+
 	scanWindow();
 	autoRefresh();
 	
 	// Inject this copy into window.ThreeInspector namespace
+	ThreeInspector.version = 'release3b';
 	window.ThreeInspector = ThreeInspector;
+	
 	
 };
 
 //  Destory ThreeInspector. Stop timers. Close widgets.
 ThreeInspector.destory = function() {
+	if (ThreeInspector.opener) {
+		ThreeInspector.opener.close();
+	}
 	ThreeInspectorWidget.close();
 	if (autoRefreshing) {
 		clearInterval(autoRefreshing);

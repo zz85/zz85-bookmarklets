@@ -30,6 +30,7 @@
  *	Add rescan Scenes
  *	Open inspector in new window - however css bugs in webkit!
  *	add link for feature requests
+ *	When dragging to scrub values, hold Shift for large changes, and Ctrl for small changes
  *
  *	TODO
  *	- poll/bind add/remove changes?
@@ -242,7 +243,8 @@ function createField(object, property) {
 	var y, x;
 	var downY, downX, downValue, number;
 	
-	var multiplierY = 0.05;
+	var defaultMultiplier = 0.1;
+	var multiplierY = defaultMultiplier;
 	var multiplierX = 0.01;
 	
 	function onMouseDown(event) {
@@ -257,8 +259,48 @@ function createField(object, property) {
 
 		targetDom.addEventListener( 'mousemove',  onMouseMove, false );
 		targetDom.addEventListener( 'mouseup',  onMouseUp, false );
-		
+		targetDom.addEventListener( 'keydown', onDocumentKeyDown, false );
+		targetDom.addEventListener( 'keyup', onDocumentKeyUp, false );
 		return false;
+	}
+	
+	function onDocumentKeyDown(event) {
+		switch (event.keyCode) {
+			case 16:
+				// shift
+				multiplierY = 10;
+				break;
+			case 17:
+				// control
+				multiplierY = 0.01;
+				break;
+			case 18:
+				// Alt
+				break;
+			case 91:
+				// Cmd
+				break;
+		}
+	}
+	
+	function onDocumentKeyUp(event) {
+		switch (event.keyCode) {
+			case 16:
+				// shift
+				multiplierY = defaultMultiplier;
+				break;
+			case 17:
+				// control
+				multiplierY = defaultMultiplier;
+				break;
+			case 18:
+				// Alt
+				multiplierY = defaultMultiplier;
+				break;
+			case 91:
+				// Cmd
+				break;
+		}
 	}
 
 	function onMouseMove(event) {
@@ -281,10 +323,13 @@ function createField(object, property) {
 	function onMouseUp(event) {
 		targetDom.removeEventListener( 'mousemove',  onMouseMove, false );
 		targetDom.removeEventListener( 'mouseup',  onMouseUp, false );
+		targetDom.removeEventListener( 'keydown', onDocumentKeyDown, false );
+		targetDom.removeEventListener( 'keyup', onDocumentKeyUp, false );
 		
 		onMouseMove(event);
 		// valueField.focus();
 		valueField.select();
+		multiplierY = defaultMultiplier;
 		
 		
 	}
@@ -563,8 +608,8 @@ function Widget(title, id, targetDom) {
 		x = e.clientX;
 		y = e.clientY;
 
-		offsetX = e.offsetX || e.layerX;
-		offsetY = e.offsetY || e.layerY;
+		offsetX = (e.offsetX===undefined) ? e.offsetX : e.layerX;
+		offsetY = (e.offsetY===undefined) ? e.offsetY : e.layerY;
 
 		startTop = divWidget.offsetTop;
 		startLeft = divWidget.offsetLeft;

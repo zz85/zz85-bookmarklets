@@ -51,6 +51,17 @@
 var autoUpdateDiv;
 var targetDom; 
 
+function getPropertiesPane() {
+	if (ThreeInspector.sidePane && !ThreeInspector.sidePane.isClosed) {
+		return ThreeInspector.sidePane;
+	}
+	
+	ThreeInspector.sidePane = new Widget('Properties', 'threePropertiesPane', targetDom);
+	ThreeInspector.sidePane.setSize(window.innerWidth - 480, 264);
+	ThreeInspector.sidePane.setPosition(450, window.innerHeight - ThreeInspectorWidget.div.clientHeight );
+	return ThreeInspector.sidePane;
+}
+
 function scanWindow() {
 	
 	if (typeof(THREE) == 'undefined') {
@@ -308,16 +319,11 @@ function createField(object, property) {
 		
 		y = event.clientY;
 		x = event.clientX;
-		
-		// var scrub = (x - downX) * multiplierX;
-		// if (scrub<1) scrub = 1;
-		// if (scrub>100) scrub = 100;
-		
+				
 		number = downValue - (y - downY) * multiplierY;
-		//  * scrub
+
 		valueField.value = number;
 		valueField.onchange();
-		//return false;
 	}	
 	
 	function onMouseUp(event) {
@@ -395,8 +401,12 @@ function inspectChildren(scene, dom, variable) {
 					break;
 				}
 			}
-			// Perhaps we could use the auto generated ID as name
 			
+			// Perhaps we could use the auto generated ID as name
+			if (!name || name == '') {
+				child.name = "id_" + child.id;
+				name = child.name;
+			}
 		}
 		
 		var noOfChildren = '';
@@ -413,7 +423,7 @@ function inspectChildren(scene, dom, variable) {
 		nameField.onchange = updateNameCallback(nameField, child);
 		
 		var li = document.createElement('li');
-		li.innerHTML = ' &lt;' + zlass + '&gt; <i>id#' + child.id + '</i>'; // + noOfChildren;
+		li.innerHTML = ' &lt;' + zlass + '&gt;';
 		li.className = 'threeInspectorSceneObject';
 		
 		var indexText = document.createTextNode( i + ': ');
@@ -426,11 +436,71 @@ function inspectChildren(scene, dom, variable) {
 		debug.onclick = debugObject(child);
 		li.appendChild(debug);
 		
+		var viewproperties = document.createElement('a');
+		viewproperties.innerHTML = ' <i>[more]</i> ';
+		viewproperties.onclick = viewProperties(child, zlass, subclass, child.id);
+		li.appendChild(viewproperties);
+		
+		
 		var objectProps = document.createElement('ul');
 		
+		function viewProperties(child, zlass, subclass, id) {
+			return function() {
+				
+				getPropertiesPane().add('<br/>Detected THREE Type: '+zlass + '<br/>');
+				getPropertiesPane().add('Detected THREE super classes: '+subclass.join(',') + '<br/>');
+				getPropertiesPane().add('Object ID: '+id + '<br/>');
+				
+				function checkAndAdd(property, label) {
+					if (child[property]!==undefined) {
+						getPropertiesPane().add(label + child[property] + '<br/>');
+					}
+				}
+				
+				
+				if (child.geometry) {
+					getPropertiesPane().add('Geometry: Face count - '+ child.geometry.faces.length + '<br/>');
+					getPropertiesPane().add('Geometry: Vertex count - '+ child.geometry.vertices.length + '<br/>');
+				}
+				
+				
+				
+				if (child instanceof THREE.Camera) {
+					checkAndAdd('fov', 'Camera: FOV - ');
+					checkAndAdd('far', 'Camera: Far - ');
+					checkAndAdd('near', 'Camera: Near - ');
+					checkAndAdd('aspect', 'Camera: Aspect - ');
+					
+				}
+				
+				if (child instanceof THREE.Light) {
+					checkAndAdd('intensity', 'Light: intensity - ');
+					checkAndAdd('distance', 'Light: distance - ');
+					checkAndAdd('castShadow', 'Light: castShadow - ');
+					checkAndAdd('target', 'Light: target - ');
+				}
+				
+				if (child.material) {
+					if (child.material.opacity) {
+						getPropertiesPane().add('Opactiy: '+ child.material.opacity + '<br/>');
+					}
+
+					if (child.material.transparent) {
+						getPropertiesPane().add('Transparency: '+ child.material.transparent + '<br/>');
+					}
+				}
+				
+				if (child.color) {
+					getPropertiesPane().add('Color: HEX - #'+ child.color.getHex().toString(16) + '<br/>');
+					getPropertiesPane().add('Color: RGB - '+ child.color.getContextStyle() + '<br/>');
+				}
+				
+
+
+			}
+		}
 		
-		// ThreeInspectorWidget.add('Known THREE Type found: THREE.'+zlass + '<br/>');
-		// ThreeInspectorWidget.add('Known THREE super classes: '+subclass.join(',') + '<br/>');
+		
 		// THREE.Line ParticleSystems
 		var isMesh = (child instanceof THREE.Mesh),
 			isLight = (child instanceof THREE.Light),
@@ -608,8 +678,8 @@ function Widget(title, id, targetDom) {
 		x = e.clientX;
 		y = e.clientY;
 
-		offsetX = (e.offsetX===undefined) ? e.offsetX : e.layerX;
-		offsetY = (e.offsetY===undefined) ? e.offsetY : e.layerY;
+		offsetX = (e.offsetX!==undefined) ? e.offsetX : e.layerX;
+		offsetY = (e.offsetY!==undefined) ? e.offsetY : e.layerY;
 
 		startTop = divWidget.offsetTop;
 		startLeft = divWidget.offsetLeft;
@@ -717,6 +787,12 @@ function Widget(title, id, targetDom) {
 	this.add = function(content) {
 		divWidgetContent.innerHTML += content;
 	};
+	
+	/* this.clear 
+	while (node.hasChildNodes()) {
+	    node.removeChild(node.lastChild);
+	}
+	*/
 	
 	this.close = function() {
 		if (me.isClosed) return;
@@ -846,17 +922,18 @@ ThreeInspector.start = function() {
 		style.innerHTML = styles;
 		targetDom.body.appendChild(style);
 		ThreeInspectorWidget = new Widget('Three.js Scene Inspector', 'threeInspectorWidget', targetDom);
-		
+		ThreeInspectorWidget.setSize(420, 264);
+		ThreeInspectorWidget.setPosition(0, window.innerHeight - ThreeInspectorWidget.div.clientHeight );
 	}
 
 	scanWindow();
 	autoRefresh();
 	
 	// Inject this copy into window.ThreeInspector namespace
-	ThreeInspector.version = 'release3b';
+	ThreeInspector.version = 'release3c';
 	window.ThreeInspector = ThreeInspector;
 	
-	
+
 };
 
 //  Destory ThreeInspector. Stop timers. Close widgets.
@@ -864,7 +941,10 @@ ThreeInspector.destory = function() {
 	if (ThreeInspector.opener) {
 		ThreeInspector.opener.close();
 	}
+	
 	ThreeInspectorWidget.close();
+	if (ThreeInspector.sidePane) ThreeInspector.sidePane.close();
+	
 	if (autoRefreshing) {
 		clearInterval(autoRefreshing);
 		autoRefreshing = null;

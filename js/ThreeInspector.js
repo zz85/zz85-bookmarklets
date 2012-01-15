@@ -31,11 +31,13 @@
  *	Open inspector in new window - however css bugs in webkit!
  *	add link for feature requests
  *	When dragging to scrub values, hold Shift for large changes, and Ctrl for small changes
+ *	remove from scene.
+ *	Added light colors and intensity
+ *	Simple properties pane
  *
  *	TODO
  *	- poll/bind add/remove changes?
  * 	- Stats: geometry / faces / vertices count
- *	- create a properties side window? - and move inspecting properties into it?
  *	- integrate gui + director.js
  *	- color picker for lights, materials
  *	- create interactive examples for three.js
@@ -43,6 +45,8 @@
  *	- materials editor
  *	- geometry editor
  *	- shape editor
+ *	- mouse wheel? / runner? / Shift on document?
+ *	- rescan without reloading...
  */
 
 (function() {
@@ -441,6 +445,17 @@ function inspectChildren(scene, dom, variable) {
 		viewproperties.onclick = viewProperties(child, zlass, subclass, child.id);
 		li.appendChild(viewproperties);
 		
+		var remove = document.createElement('a');
+		remove.innerHTML = ' <i>[remove]</i> ';
+		remove.onclick = removeObj(child);
+		li.appendChild(remove);
+		
+		function removeObj(obj) {
+			return function() {
+				console.log(obj);
+				obj.parent.remove(obj);
+			}
+		}
 		
 		var objectProps = document.createElement('ul');
 		
@@ -531,6 +546,32 @@ function inspectChildren(scene, dom, variable) {
 			d.innerHTML = 'opacity: &nbsp;';
 			d.appendChild(createField(child, 'opacity'));
 			objectProps.appendChild(d);
+		}
+		
+		if (isLight) {
+			
+			d = document.createElement('li');
+			
+			d.innerHTML = 'color: &nbsp;&nbsp;&nbsp;';
+			
+			d.appendChild(createField(child.color, 'r'));
+			d.appendChild(createField(child.color, 'g'));
+			d.appendChild(createField(child.color, 'b'));
+
+			objectProps.appendChild(d);
+			
+			if (child.intensity) {
+				
+				d = document.createElement('li');
+
+				d.innerHTML = 'intensity:';
+
+				d.appendChild(createField(child, 'intensity'));
+
+				objectProps.appendChild(d);
+				
+			}
+			
 		}
 
 		

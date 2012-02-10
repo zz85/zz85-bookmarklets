@@ -34,6 +34,7 @@
  *	remove from scene.
  *	Added light colors and intensity
  *	Simple properties pane
+ *	Visibility checkbox
  *
  *	TODO
  *	- poll/bind add/remove changes?
@@ -243,7 +244,18 @@ function valueChangeCallback(target, property, view) {
 }
 
 
-
+function createCheckbox(object, property) {
+	var valueField = document.createElement('input');
+	valueField.type = 'checkbox';
+	valueField.checked = object[property];
+	
+	valueField.onchange = function(e) {
+		object[property] = valueField.checked;
+	}
+	
+	return valueField;
+	
+}
 
 function createField(object, property) {
 	var valueField = document.createElement('input');
@@ -576,6 +588,14 @@ function inspectChildren(scene, dom, variable) {
 
 		
 		if (isObject) {
+			
+			// Visibility
+			
+			d = document.createElement('li');
+			d.innerHTML = 'visible:  ';
+			var checkbox = createCheckbox(child, 'visible');
+			d.appendChild(checkbox);
+			objectProps.appendChild(d);
 			
 			// Position
 			

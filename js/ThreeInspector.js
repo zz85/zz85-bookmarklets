@@ -35,6 +35,7 @@
  *	Added light colors and intensity
  *	Simple properties pane
  *	Visibility checkbox
+ *	Draggable Controls
  *
  *	TODO
  *	- poll/bind add/remove changes?
@@ -48,6 +49,7 @@
  *	- shape editor
  *	- mouse wheel? / runner? / Shift on document?
  *	- rescan without reloading...
+ *	- Inspect object on click
  */
 
 (function() {
@@ -106,8 +108,28 @@ function scanWindow() {
 	var divRescan = document.createElement('span');
 	divRescan.innerHTML = '| <a>Rescan All Scenes</a><br/>';
 	divRescan.onclick = ThreeInspector.start;
-	
+
 	ThreeInspectorWidget.contents.appendChild(divRescan);
+	
+	var divDraggable = document.createElement('span');
+	divDraggable.innerHTML = '<a> *new* Enable Draggable Objects</a><br/>';
+	divDraggable.onclick = function() {
+		if (THREE.DragControls) {
+			new THREE.DragControls(camera, scene, renderer.domElement);
+		} else {
+			var script = document.createElement('script');
+
+			script.type = 'text/javascript';
+			script.src = 'https://raw.github.com/zz85/ThreeLabs/master/DragControls.js';
+			document.body.appendChild(script);
+			script.onload = function(){
+				var dragcontrols = new THREE.DragControls(camera, scene, renderer.domElement);
+			};
+		}
+	};
+	
+	ThreeInspectorWidget.contents.appendChild(divDraggable);
+	
 	
 	for (var w in window) {
 		// Search for scenes

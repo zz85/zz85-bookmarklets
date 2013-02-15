@@ -38,7 +38,8 @@
  *	Draggable Controls
  *
  *	TODO
- *	- poll/bind add/remove changes?
+ *	- poll/bind add/remove changes? (use experimental Object.observe?)
+ *	- detect camera
  * 	- Stats: geometry / faces / vertices count
  *	- integrate gui + director.js
  *	- color picker for lights, materials
@@ -476,7 +477,7 @@ function inspectChildren(scene, dom, variable) {
 		
 		var viewproperties = document.createElement('a');
 		viewproperties.innerHTML = ' <i>[more]</i> ';
-		viewproperties.onclick = viewProperties(child, zlass, subclass, child.id);
+		viewproperties.onclick = objProperties(child, zlass, subclass, child.id);
 		li.appendChild(viewproperties);
 		
 		var remove = document.createElement('a');
@@ -493,7 +494,7 @@ function inspectChildren(scene, dom, variable) {
 		
 		var objectProps = document.createElement('ul');
 		
-		function viewProperties(child, zlass, subclass, id) {
+		function objProperties(child, zlass, subclass, id) {
 			return function() {
 				
 				getPropertiesPane().add('<br/>Detected THREE Type: '+zlass + '<br/>');

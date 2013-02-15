@@ -485,71 +485,9 @@ function inspectChildren(scene, dom, variable) {
 		remove.onclick = removeObj(child);
 		li.appendChild(remove);
 		
-		function removeObj(obj) {
-			return function() {
-				console.log(obj);
-				obj.parent.remove(obj);
-			}
-		}
-		
 		var objectProps = document.createElement('ul');
 		
-		function objProperties(child, zlass, subclass, id) {
-			return function() {
-				
-				getPropertiesPane().add('<br/>Detected THREE Type: '+zlass + '<br/>');
-				getPropertiesPane().add('Detected THREE super classes: '+subclass.join(',') + '<br/>');
-				getPropertiesPane().add('Object ID: '+id + '<br/>');
-				
-				function checkAndAdd(property, label) {
-					if (child[property]!==undefined) {
-						getPropertiesPane().add(label + child[property] + '<br/>');
-					}
-				}
-				
-				
-				if (child.geometry) {
-					getPropertiesPane().add('Geometry: Face count - '+ child.geometry.faces.length + '<br/>');
-					getPropertiesPane().add('Geometry: Vertex count - '+ child.geometry.vertices.length + '<br/>');
-				}
-				
-				
-				
-				if (child instanceof THREE.Camera) {
-					checkAndAdd('fov', 'Camera: FOV - ');
-					checkAndAdd('far', 'Camera: Far - ');
-					checkAndAdd('near', 'Camera: Near - ');
-					checkAndAdd('aspect', 'Camera: Aspect - ');
-					
-				}
-				
-				if (child instanceof THREE.Light) {
-					checkAndAdd('intensity', 'Light: intensity - ');
-					checkAndAdd('distance', 'Light: distance - ');
-					checkAndAdd('castShadow', 'Light: castShadow - ');
-					checkAndAdd('target', 'Light: target - ');
-				}
-				
-				if (child.material) {
-					if (child.material.opacity) {
-						getPropertiesPane().add('Opactiy: '+ child.material.opacity + '<br/>');
-					}
-
-					if (child.material.transparent) {
-						getPropertiesPane().add('Transparency: '+ child.material.transparent + '<br/>');
-					}
-				}
-				
-				if (child.color) {
-					getPropertiesPane().add('Color: HEX - #'+ child.color.getHex().toString(16) + '<br/>');
-					getPropertiesPane().add('Color: RGB - '+ child.color.getContextStyle() + '<br/>');
-				}
-				
-
-
-			}
-		}
-		
+	
 		
 		// THREE.Line ParticleSystems
 		var isMesh = (child instanceof THREE.Mesh),
@@ -679,6 +617,70 @@ function inspectChildren(scene, dom, variable) {
 	dom._inspected = true;
 	ThreeInspectorWidget.setStatus("");
 }
+
+function removeObj(obj) {
+	return function() {
+		console.log(obj);
+		obj.parent.remove(obj);
+	}
+}
+
+function objProperties(child, zlass, subclass, id) {
+		return function() {
+			
+			getPropertiesPane().add('<br/>Detected THREE Type: '+zlass + '<br/>');
+			getPropertiesPane().add('Detected THREE super classes: '+subclass.join(',') + '<br/>');
+			getPropertiesPane().add('Object ID: '+id + '<br/>');
+			
+			function checkAndAdd(property, label) {
+				if (child[property]!==undefined) {
+					getPropertiesPane().add(label + child[property] + '<br/>');
+				}
+			}
+			
+			
+			if (child.geometry) {
+				getPropertiesPane().add('Geometry: Face count - '+ child.geometry.faces.length + '<br/>');
+				getPropertiesPane().add('Geometry: Vertex count - '+ child.geometry.vertices.length + '<br/>');
+			}
+			
+			
+			
+			if (child instanceof THREE.Camera) {
+				checkAndAdd('fov', 'Camera: FOV - ');
+				checkAndAdd('far', 'Camera: Far - ');
+				checkAndAdd('near', 'Camera: Near - ');
+				checkAndAdd('aspect', 'Camera: Aspect - ');
+				
+			}
+			
+			if (child instanceof THREE.Light) {
+				checkAndAdd('intensity', 'Light: intensity - ');
+				checkAndAdd('distance', 'Light: distance - ');
+				checkAndAdd('castShadow', 'Light: castShadow - ');
+				checkAndAdd('target', 'Light: target - ');
+			}
+			
+			if (child.material) {
+				if (child.material.opacity) {
+					getPropertiesPane().add('Opactiy: '+ child.material.opacity + '<br/>');
+				}
+
+				if (child.material.transparent) {
+					getPropertiesPane().add('Transparency: '+ child.material.transparent + '<br/>');
+				}
+			}
+			
+			if (child.color) {
+				getPropertiesPane().add('Color: HEX - #'+ child.color.getHex().toString(16) + '<br/>');
+				getPropertiesPane().add('Color: RGB - '+ child.color.getContextStyle() + '<br/>');
+			}
+			
+
+
+		}
+	}
+
 
 // Windowing Widget experiment
 

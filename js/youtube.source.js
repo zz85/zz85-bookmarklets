@@ -1,16 +1,29 @@
 javascript:(function() {
-    function add(t, u, title) {
-		var a = document.createElement("a");
-	 	var t = document.createTextNode(t);
-		a.appendChild(t);
-	 	a.setAttribute('href', u + "&title="+ title);
-	 	a.setAttribute('style', 'font-weight:bold; font-size:larger; margin-right:5px');
-	 	var b = document.getElementById("watch7-video");
+	var destroyPlayer = true;
+	var fmt_string = "url_encoded_fmt_stream_map";
+	var placeHolder = document.getElementById("placeHolder");
+	if(!placeHolder){
+		placeHolder = document.createElement("div");
+		placeHolder.setAttribute("id","placeHolder");
+		var b = document.getElementById("watch7-headline");
 		if (b == null) {
-	 		document.body.parentNode.insertBefore(a,document.body);
-	 	} else {
-			b.parentNode.insertBefore(a,b);
+			document.body.parentNode.insertBefore(placeHolder,document.body);
+		} else {
+			b.insertBefore(placeHolder,b.firstElementChild);
 		}
+	} else {
+		while(placeHolder.lastChild){
+			placeHolder.removeChild(placeHolder.lastChild);
+		}
+	}
+
+	function add(t, u, title) {
+		var a = document.createElement("a");
+		var t = document.createTextNode(t);
+		a.appendChild(t);
+		a.setAttribute('href', u + "&title="+ title);
+		placeHolder = document.getElementById("placeHolder");
+		placeHolder.insertBefore(a,placeHolder.firstElementChild)
 	}
 	function getAttr(arr,att) {
 		for(var i=0; i<arr.length; i++){
@@ -35,25 +48,52 @@ javascript:(function() {
 			return "Other";
 		}
 	}
+	
+	/* Get parameter list */
+	var html5ConfigString = "ytplayer.config = ";
 	var mplayer = document.getElementById("movie_player");
 	var swfHTML = mplayer.getAttribute("flashvars");
 	swfHTML || (swfHTML = mplayer.getElementsByTagName("param")[1].value);
-	var destroyPlayer = true;
-	var w = swfHTML.split("&");
-	for (i = 0; i <= w.length - 1; i++) {
-	 	if (w[i].split("=")[0] == "url_encoded_fmt_stream_map") {
-	 		links = unescape(w[i].split("=")[1]);
-	 		break;
-	 	}
+	var paramList = null;
+	if (!swfHTML){
+		/* The case for HTML5 player */
+		var scripts = document.getElementsByTagName("script");
+		for(i = 0; i < scripts.length; i++){
+			var script = scripts[i];
+			if (script.text.indexOf(html5ConfigString)>=0){
+				var paramStringStart = script.text.indexOf(html5ConfigString)+html5ConfigString.length;
+				paramString = script.text.substring(paramStringStart, script.text.length-1);
+				paramList = JSON.parse(paramString);
+				for(var prop in paramList["args"]){
+					paramList[prop] = paramList["args"][prop];
+				}
+				delete(paramList["args"]);
+				paramList[fmt_string] = paramList[fmt_string].replace(/\\u0026/g,"&");
+				break;
+			}
+		}
+	} else {
+		/* The case for Flash player */
+		var w = swfHTML.split("&");
+		paramList = Object();
+		for (i = 0; i <= w.length - 1; i++) {
+			var keyValue = w[i].split("=");
+			paramList[keyValue[0]] = keyValue[1];
+			if (keyValue[0] == fmt_string) {
+				paramList[fmt_string] = unescape(keyValue[1]);
+				break;
+			}
+		}
 	}
-	var fmt_list = unescape(getAttr(w,"fmt_list"));
+	
+	var fmt_list = unescape(paramList["fmt_list"]);
 	var fmt_list = fmt_list.split(",");
 	var list = [];
 	for(var i=0; i<fmt_list.length; i++){
 		var tmparr = fmt_list[i].split("/");
 		list[tmparr[0]] = tmparr[1];
 	}
-	var abc = links.split(",");
+	var abc = paramList[fmt_string].split(",");
 	for (i = 1; i <= abc.length - 1; i++) {
 	 	var fmt = abc[i].split("&");
 		var url = unescape(getAttr(fmt,"url"));
@@ -65,7 +105,7 @@ javascript:(function() {
 	 	add("[" + list[code] + " " + type + "]", url, title);
 	}
 	if (!destroyPlayer) return;
-	var cells = document.getElementsByTagName("embed");
-	for (var i = 0; i < cells.length; i++) var temp = cells[i].parentNode.removeChild(cells[i]);
+	var moviePlayer = document.getElementById("movie_player");
+	moviePlayer.parentNode.removeChild(moviePlayer);
 }
 )();

@@ -53,7 +53,6 @@ javascript:(function() {
 	var html5ConfigString = "ytplayer.config = ";
 	var mplayer = document.getElementById("movie_player");
 	var swfHTML = mplayer.getAttribute("flashvars");
-	swfHTML || (swfHTML = mplayer.getElementsByTagName("param")[1].value);
 	var paramList = null;
 	if (!swfHTML){
 		/* The case for HTML5 player */

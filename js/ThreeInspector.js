@@ -75,7 +75,7 @@ function scanWindow() {
 	if (typeof(THREE) == 'undefined') {
 		ThreeInspectorWidget.setStatus('Three.js not found.');
 		ThreeInspectorWidget.add('Three.js not found.');
-		return;
+		return false;
 	}
 
 	var sceneGraph;
@@ -1012,8 +1012,7 @@ ThreeInspector.start = function() {
 		ThreeInspectorWidget.setPosition(0, window.innerHeight - ThreeInspectorWidget.div.clientHeight );
 	}
 
-	scanWindow();
-	autoRefresh();
+	scanWindow() && autoRefresh();
 
 	// Inject this copy into window.ThreeInspector namespace
 	ThreeInspector.version = 'release3c';

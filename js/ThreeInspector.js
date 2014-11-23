@@ -121,7 +121,7 @@ function scanWindow() {
 			var script = document.createElement('script');
 
 			script.type = 'text/javascript';
-			script.src = 'https://raw.github.com/zz85/ThreeLabs/master/DragControls.js';
+			script.src = 'https://cdn.rawgit.com/zz85/ThreeLabs/master/DragControls.js';
 			document.body.appendChild(script);
 			script.onload = function(){
 				var dragcontrols = new THREE.DragControls(camera, scene, renderer.domElement);

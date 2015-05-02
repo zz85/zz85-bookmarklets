@@ -43,7 +43,7 @@
  *	TODO
  *	- poll/bind add/remove changes? (use experimental Object.observe?)
  * 	- Stats: geometry / faces / vertices count
- *	- integrate gui + director.js
+ *	- integrate gui + director.js + timeliner.js + rstats.js?
  *	- color picker for lights, materials
  *	- create interactive examples for three.js
  *	- use css for collapsing and expanding divs?
@@ -52,6 +52,7 @@
  *	- shape editor
  *	- mouse wheel? / runner? / Shift on document?
  *	- rescan without reloading...
+ *  - 
  */
 
 (function() {
@@ -63,6 +64,9 @@ var autoUpdateDiv;
 var targetDom;
 var allInspectedObjectReferences = [];
 var allInspectedMaterialReferences = [];
+
+var materialsToInspect = [];
+var materialNamesToInspect = [];
 
 function getPropertiesPane() {
 	if (ThreeInspector.sidePane && !ThreeInspector.sidePane.isClosed) {
@@ -178,16 +182,24 @@ function scanWindow() {
 
 		var anItem = SCOPE[w];
 		if (anItem instanceof THREE.Camera && allInspectedObjectReferences.indexOf(anItem) === -1) {
-			addInspectChild(anItem, ThreeInspectorWidget.contents, others);
+			addInspectChild(anItem, ThreeInspectorWidget.contents, w); // others
 			others++;
 		}
 
-		if (anItem instanceof THREE.Material && allInspectedMaterialReferences.indexOf(anItem) === -1) {
-			allInspectedMaterialReferences.push(anItem);
-			addInspectChild(anItem, ThreeInspectorWidget.contents, others);
-			others++;
+		if (anItem instanceof THREE.Material) {
+			materialsToInspect.push(anItem);
+			materialNamesToInspect.push(w);
 		}
 	}
+
+	materialsToInspect.forEach(function(material, i) {
+		if (allInspectedMaterialReferences.indexOf(material) > -1) return;
+
+		allInspectedMaterialReferences.push(material);
+		addInspectChild(material, ThreeInspectorWidget.contents, 'material ' + i);
+		others++;
+	});
+
 }
 
 // Function callbacks
@@ -479,7 +491,6 @@ function addInspectChild(child, dom, i) {
 		// to scan global scope for names if not found?
 		for (var w in SCOPE) {
 			if (SCOPE[w]==child) {
-				child.name = w;
 				name = w;
 				break;
 			}
@@ -487,9 +498,14 @@ function addInspectChild(child, dom, i) {
 
 		// Perhaps we could use the auto generated ID as name
 		if (!name || name == '') {
-			child.name = "id_" + child.id;
-			name = child.name;
+			name = "id_" + child.id;
 		}
+
+		if (materialsToInspect.indexOf(child) > -1) {
+			name = materialNamesToInspect[materialsToInspect.indexOf(child)];
+		}
+
+		child.name = name;
 	}
 
 	var nameField = document.createElement('input');
@@ -539,6 +555,11 @@ function addInspectChild(child, dom, i) {
 
 	if (isObject) {
 		allInspectedObjectReferences.push(child);
+	}
+
+	if (isMesh) {
+		materialsToInspect.push(child.material);
+		materialNamesToInspect.push(name +'.material')
 	}
 
 	if (child instanceof THREE.Material) {
@@ -786,7 +807,7 @@ function Widget(title, id, targetDom) {
 		font-family:monospace;\
 		font-size: 12px;\
 		background-color: rgba(255,255,255,0.65);\
-		text-shadow: 0px 1px 3px #ddd;\
+		text-shadow: 0px 1px 3px #333;\
 		text-align: center;\
 		z-index: 1985;';
 
@@ -1060,6 +1081,9 @@ ThreeInspector.start = function() {
 		newWindow = true;
 	}
 
+	// Inject this copy into window.ThreeInspector namespace
+	ThreeInspector.version = '4a';
+
 	if (ThreeInspector.newWindow) {
 
 		// new window
@@ -1080,7 +1104,7 @@ ThreeInspector.start = function() {
 		style.innerHTML = styles;
 		targetDom.body.appendChild(style);
 
-		ThreeInspectorWidget = new Widget('Three.js Scene Inspector', 'threeInspectorWidget', targetDom);
+		ThreeInspectorWidget = new Widget('Three.js Inspector ' + ThreeInspector.version, 'threeInspectorWidget', targetDom);
 		ThreeInspectorWidget.setPosition(0,0);
 		ThreeInspectorWidget.setSize(780, 380);
 
@@ -1097,15 +1121,12 @@ ThreeInspector.start = function() {
 		var style = document.createElement('style');
 		style.innerHTML = styles;
 		targetDom.body.appendChild(style);
-		ThreeInspectorWidget = new Widget('Three.js Scene Inspector', 'threeInspectorWidget', targetDom);
+		ThreeInspectorWidget = new Widget('Three.js Inspector ' + ThreeInspector.version, 'threeInspectorWidget', targetDom);
 		ThreeInspectorWidget.setSize(420, 264);
 		ThreeInspectorWidget.setPosition(0, window.innerHeight - ThreeInspectorWidget.div.clientHeight );
 	}
 
 	scanWindow() && autoRefresh();
-
-	// Inject this copy into window.ThreeInspector namespace
-	ThreeInspector.version = 'release4a';
 	window.ThreeInspector = ThreeInspector;
 
 

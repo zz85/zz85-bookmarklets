@@ -1,35 +1,47 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="utf-8">
-    <title>Three.js Inspector Labs</title>
+	<head>
+	<meta charset="utf-8">
+	<title>Three.js Inspector Labs</title>
 	<style>
 		html {
 			font-family: Georgia, serif;
 		}
 	</style>
-  </head>
-  <body>
-  	<h1>Three.js Inspector Labs</h1>
-	<p>ThreeInspector is set of small tools for <a href="https://github.com/mrdoob/three.js/">Three.js</a>, in the form of <a href="index.html">bookmarklets</a>. Until it becomes mature enough for Three.js or gets its own repository, this page serves as a temporary shelter for these experiments. To use drag the bookmarklets into your toolbar (done once only as updates to ThreeInspector are automatic). To run, click on the bookmarklet inside three.js pages.</p>
+	</head>
+	<body>
+	<h1>Three.js Inspector</h1>
+	<p>Three.js Inspector is a badly maintained hack to quickly inspect and edit <a href="https://github.com/mrdoob/three.js/">Three.js</a> scenes, deployed the as a <a href="index.html">bookmarklets</a> widget created by <a href="https://twitter.com/blurspline">@blurspline</a>.</p>
 
-    <p><a href="javascript:(function(){var script=document.createElement('script');script.type='text/javascript';script.src='https://cdn.rawgit.com/zz85/zz85-bookmarklets/master/js/ThreeInspector.js';document.body.appendChild(script);})()">Three.js Scene Inspector</a> - Displays objects found in Three.js Scenes. Drag the values to alter properties of objects.</p>
+	<p>Someday this could become an npm module, till then this page serves as a temporary shelter for these experiments. To use drag the bookmarklet into your toolbar (done once only as updates to ThreeInspector are automatic). Then click on the bookmarklet to activate the inspector while running three.js </p>
 
-	
-    
+	<p><a href="javascript:(function(){var script=document.createElement('script');script.type='text/javascript';script.src='https://cdn.rawgit.com/zz85/zz85-bookmarklets/master/js/ThreeInspector.js';document.body.appendChild(script);})()">Three.js Inspector</a></p>
+
+	<p>Of course, you can also load them with your development experiments like this.</p>
+
+	<pre>&lt;script src=&quot;https://cdn.rawgit.com/zz85/zz85-bookmarklets/master/js/ThreeInspector.js&quot;&gt;&lt;/script&gt;</pre>
+
+	<p>
+	<h2>Updates</h2>
+		<p>
+		v4a - detects cameras and shader materials uniforms<br/>
+		<img src="screenshots/material_uniforms.png" />
+		</p>
+	</p>
+
 	<script type="text/javascript">
 
-	  var _gaq = _gaq || [];
-	  _gaq.push(['_setAccount', 'UA-7549263-1']);
-	  _gaq.push(['_trackPageview']);
+		var _gaq = _gaq || [];
+		_gaq.push(['_setAccount', 'UA-7549263-1']);
+		_gaq.push(['_trackPageview']);
 
-	  (function() {
-	    var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
-	    ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
-	    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
-	  })();
+		(function() {
+		var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+		ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+		var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+		})();
 
 	</script>
 	
-  </body>
+	</body>
 </html>

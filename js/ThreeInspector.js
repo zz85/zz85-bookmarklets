@@ -55,9 +55,12 @@
 
 (function() {
 
+var SCOPE = self; // self this window
+console.log('scope', SCOPE);
 
 var autoUpdateDiv;
 var targetDom;
+var allInspectedReferences = [];
 
 function getPropertiesPane() {
 	if (ThreeInspector.sidePane && !ThreeInspector.sidePane.isClosed) {
@@ -80,8 +83,9 @@ function scanWindow() {
 
 	var sceneGraph;
 
-	var sceneNames = [];
-	var sceneReferences = [];
+	var sceneNames = []; // variable names
+	var sceneReferences = []; // pointers to object
+
 	var aScene, children;
 
 
@@ -131,20 +135,18 @@ function scanWindow() {
 
 	ThreeInspectorWidget.contents.appendChild(divDraggable);
 
+	// Start searching for scopes
+	for (var w in SCOPE) {
 
-	for (var w in window) {
-		// Search for scenes
-
-		if (window[w] instanceof THREE.Scene) {
+		aScene = SCOPE[w];
+		if (aScene instanceof THREE.Scene) {
 
 			sceneNames.push(w);
-			aScene = window[w];
 			sceneReferences.push(aScene);
 			children = aScene.children;
 
 			var ul = document.createElement('ul');
 			ul.innerHTML = ' &lt;THREE.Scene&gt; <span class="threeInspectorChildrenBubble">' + children.length + '</span> children';
-
 
 			var expander = document.createElement('a');
 			expander.innerHTML = '+ <b>' + w + '</b>';
@@ -168,6 +170,17 @@ function scanWindow() {
 	}
 
 	// ThreeInspectorWidget.setStatus(sceneNames.length + ' three.js scenes found.');
+
+	var others = 0;
+	for (var w in SCOPE) {
+
+		var anItem = SCOPE[w];
+		if (anItem instanceof THREE.Camera && allInspectedReferences.indexOf(anItem) === -1) {
+			addInspectChild(anItem, ThreeInspectorWidget.contents, others);
+			others++;
+		}
+	}
+
 
 }
 
@@ -385,7 +398,7 @@ function createField(object, property) {
 
 }
 
-function inspectChildren(scene, dom, variable) {
+function inspectChildren(scene, dom) {
 
 	var i,il;
 	var maxWait = 10 * 1000; // 10 seconds wait
@@ -409,213 +422,217 @@ function inspectChildren(scene, dom, variable) {
 		}
 
 		child = children[i];
-
-
-		var zlass, subclass = [];
-
-		for (var t in THREE) {
-			if (child.constructor === THREE[t]) {
-				zlass = 'THREE.' + t;
-			}
-
-			if (typeof(THREE[t]) == 'function' && child instanceof THREE[t]) {
-				subclass.push('THREE.' + t);
-			}
-		}
-
-		if (!zlass) {
-			if (subclass.length>0)
-				zlass = subclass[subclass.length-1];
-			else
-				zlass = 'unknown type';
-		}
-
-		var name = child.name;
-		if (!name || name == '') {
-			// to scan global scope for names if not found?
-			for (var w in window) {
-				if (window[w]==child) {
-					child.name = w;
-					name = w;
-					break;
-				}
-			}
-
-			// Perhaps we could use the auto generated ID as name
-			if (!name || name == '') {
-				child.name = "id_" + child.id;
-				name = child.name;
-			}
-		}
-
-		var noOfChildren = '';
-		var haveChildren = (child.children && child.children.length>0);
-		if (haveChildren) {
-			noOfChildren = ' <span class="threeInspectorChildrenBubble">' + child.children.length +'</span> children';
-		}
-
-		var nameField = document.createElement('input');
-		nameField.className = 'threeInspectorNameField';
-		nameField.type = 'text';
-		nameField.value = name;
-
-		nameField.onchange = updateNameCallback(nameField, child);
-
-		var li = document.createElement('li');
-		li.innerHTML = ' &lt;' + zlass + '&gt;';
-		li.className = 'threeInspectorSceneObject';
-
-		var indexText = document.createTextNode( i + ': ');
-		li.insertBefore(nameField, li.firstChild);
-		li.insertBefore(indexText, li.firstChild);
-		// li.appendChild(nameField);
-
-		var debug = document.createElement('a');
-		debug.innerHTML = ' &#191; ';
-		debug.onclick = debugObject(child);
-		li.appendChild(debug);
-
-		var viewproperties = document.createElement('a');
-		viewproperties.innerHTML = ' <i>[more]</i> ';
-		viewproperties.onclick = objProperties(child, zlass, subclass, child.id);
-		li.appendChild(viewproperties);
-
-		var remove = document.createElement('a');
-		remove.innerHTML = ' <i>[remove]</i> ';
-		remove.onclick = removeObj(child);
-		li.appendChild(remove);
-
-		var objectProps = document.createElement('ul');
-
-
-
-		// THREE.Line ParticleSystems
-		var isMesh = (child instanceof THREE.Mesh),
-			isLight = (child instanceof THREE.Light),
-			isCamera = (child instanceof THREE.Camera),
-			isObject = (child instanceof THREE.Object3D),
-			isSprite = (child instanceof THREE.Sprite)
-			;
-
-		var d;
-
-		if (isSprite) {
-			d = document.createElement('li');
-			d.innerHTML = 'rotation:';
-			d.appendChild(createField(child, 'rotation'));
-			objectProps.appendChild(d);
-
-			d = document.createElement('li');
-			d.innerHTML = 'rotation3d:';
-			d.appendChild(createField(child.rotation3d, 'x'));
-			d.appendChild(createField(child.rotation3d, 'y'));
-			d.appendChild(createField(child.rotation3d, 'z'));
-
-			objectProps.appendChild(d);
-		}
-
-		if (child.opacity !== undefined) {
-			d = document.createElement('li');
-			d.innerHTML = 'opacity: &nbsp;';
-			d.appendChild(createField(child, 'opacity'));
-			objectProps.appendChild(d);
-		}
-
-		if (isLight) {
-
-			d = document.createElement('li');
-
-			d.innerHTML = 'color: &nbsp;&nbsp;&nbsp;';
-
-			d.appendChild(createField(child.color, 'r'));
-			d.appendChild(createField(child.color, 'g'));
-			d.appendChild(createField(child.color, 'b'));
-
-			objectProps.appendChild(d);
-
-			if (child.intensity) {
-
-				d = document.createElement('li');
-
-				d.innerHTML = 'intensity:';
-
-				d.appendChild(createField(child, 'intensity'));
-
-				objectProps.appendChild(d);
-
-			}
-
-		}
-
-
-		if (isObject) {
-
-			// Visibility
-
-			d = document.createElement('li');
-			d.innerHTML = 'visible:  ';
-			var checkbox = createCheckbox(child, 'visible');
-			d.appendChild(checkbox);
-			objectProps.appendChild(d);
-
-			// Position
-
-			d = document.createElement('li');
-
-			d.innerHTML = 'position: ';
-
-			var posX = createField(child.position, 'x');
-			var posY = createField(child.position, 'y');
-			var posZ = createField(child.position, 'z');
-
-			d.appendChild(posX);
-			d.appendChild(posY);
-			d.appendChild(posZ);
-
-			objectProps.appendChild(d);
-
-			// Rotation
-
-			if (!isSprite) {
-				d = document.createElement('li');
-				d.innerHTML = 'rotation: ';
-				d.appendChild(createField(child.rotation, 'x'));
-				d.appendChild(createField(child.rotation, 'y'));
-				d.appendChild(createField(child.rotation, 'z'));
-
-				objectProps.appendChild(d);
-			}
-
-			d = document.createElement('li');
-			d.innerHTML = 'scale: &nbsp;&nbsp;&nbsp;';
-			d.appendChild(createField(child.scale, 'x'));
-			d.appendChild(createField(child.scale, 'y'));
-			d.appendChild(createField(child.scale, 'z'));
-
-			objectProps.appendChild(d);
-			// console.log('material', child.material);
-
-		}
-
-		if (haveChildren) {
-			var ul = document.createElement('ul');
-
-			var expander = document.createElement('a');
-			expander.innerHTML = '+' + noOfChildren;
-			expander.onclick = expandScene(ul, child, name);
-			ul.appendChild(expander);
-
-			objectProps.appendChild(ul);
-		}
-
-
-		li.appendChild(objectProps);
-		dom.appendChild(li);
+		addInspectChild(child, dom, i);
 
 	}
 
 	dom._inspected = true;
 	ThreeInspectorWidget.setStatus("");
+}
+
+function addInspectChild(child, dom, i) {
+	var zlass, subclass = [];
+
+	allInspectedReferences.push(child);
+
+	for (var t in THREE) {
+		if (child.constructor === THREE[t]) {
+			zlass = 'THREE.' + t;
+		}
+
+		if (typeof(THREE[t]) == 'function' && child instanceof THREE[t]) {
+			subclass.push('THREE.' + t);
+		}
+	}
+
+	if (!zlass) {
+		if (subclass.length>0)
+			zlass = subclass[subclass.length-1];
+		else
+			zlass = 'unknown type';
+	}
+
+	var name = child.name;
+	if (!name || name == '') {
+		// to scan global scope for names if not found?
+		for (var w in SCOPE) {
+			if (SCOPE[w]==child) {
+				child.name = w;
+				name = w;
+				break;
+			}
+		}
+
+		// Perhaps we could use the auto generated ID as name
+		if (!name || name == '') {
+			child.name = "id_" + child.id;
+			name = child.name;
+		}
+	}
+
+	var noOfChildren = '';
+	var haveChildren = (child.children && child.children.length>0);
+	if (haveChildren) {
+		noOfChildren = ' <span class="threeInspectorChildrenBubble">' + child.children.length +'</span> children';
+	}
+
+	var nameField = document.createElement('input');
+	nameField.className = 'threeInspectorNameField';
+	nameField.type = 'text';
+	nameField.value = name;
+
+	nameField.onchange = updateNameCallback(nameField, child);
+
+	var li = document.createElement('li');
+	li.innerHTML = ' &lt;' + zlass + '&gt;';
+	li.className = 'threeInspectorSceneObject';
+
+	var indexText = document.createTextNode( i + ': ');
+	li.insertBefore(nameField, li.firstChild);
+	li.insertBefore(indexText, li.firstChild);
+	// li.appendChild(nameField);
+
+	var debug = document.createElement('a');
+	debug.innerHTML = ' &#191; ';
+	debug.onclick = debugObject(child);
+	li.appendChild(debug);
+
+	var viewproperties = document.createElement('a');
+	viewproperties.innerHTML = ' <i>[more]</i> ';
+	viewproperties.onclick = objProperties(child, zlass, subclass, child.id);
+	li.appendChild(viewproperties);
+
+	var remove = document.createElement('a');
+	remove.innerHTML = ' <i>[remove]</i> ';
+	remove.onclick = removeObj(child);
+	li.appendChild(remove);
+
+	var objectProps = document.createElement('ul');
+
+
+
+	// THREE.Line ParticleSystems
+	var isMesh = (child instanceof THREE.Mesh),
+		isLight = (child instanceof THREE.Light),
+		isCamera = (child instanceof THREE.Camera),
+		isObject = (child instanceof THREE.Object3D),
+		isSprite = (child instanceof THREE.Sprite)
+		;
+
+	var d;
+
+	if (isSprite) {
+		d = document.createElement('li');
+		d.innerHTML = 'rotation:';
+		d.appendChild(createField(child, 'rotation'));
+		objectProps.appendChild(d);
+
+		d = document.createElement('li');
+		d.innerHTML = 'rotation3d:';
+		d.appendChild(createField(child.rotation3d, 'x'));
+		d.appendChild(createField(child.rotation3d, 'y'));
+		d.appendChild(createField(child.rotation3d, 'z'));
+
+		objectProps.appendChild(d);
+	}
+
+	if (child.opacity !== undefined) {
+		d = document.createElement('li');
+		d.innerHTML = 'opacity: &nbsp;';
+		d.appendChild(createField(child, 'opacity'));
+		objectProps.appendChild(d);
+	}
+
+	if (isLight) {
+
+		d = document.createElement('li');
+
+		d.innerHTML = 'color: &nbsp;&nbsp;&nbsp;';
+
+		d.appendChild(createField(child.color, 'r'));
+		d.appendChild(createField(child.color, 'g'));
+		d.appendChild(createField(child.color, 'b'));
+
+		objectProps.appendChild(d);
+
+		if (child.intensity) {
+
+			d = document.createElement('li');
+
+			d.innerHTML = 'intensity:';
+
+			d.appendChild(createField(child, 'intensity'));
+
+			objectProps.appendChild(d);
+
+		}
+
+	}
+
+
+	if (isObject) {
+
+		// Visibility
+
+		d = document.createElement('li');
+		d.innerHTML = 'visible:  ';
+		var checkbox = createCheckbox(child, 'visible');
+		d.appendChild(checkbox);
+		objectProps.appendChild(d);
+
+		// Position
+
+		d = document.createElement('li');
+
+		d.innerHTML = 'position: ';
+
+		var posX = createField(child.position, 'x');
+		var posY = createField(child.position, 'y');
+		var posZ = createField(child.position, 'z');
+
+		d.appendChild(posX);
+		d.appendChild(posY);
+		d.appendChild(posZ);
+
+		objectProps.appendChild(d);
+
+		// Rotation
+
+		if (!isSprite) {
+			d = document.createElement('li');
+			d.innerHTML = 'rotation: ';
+			d.appendChild(createField(child.rotation, 'x'));
+			d.appendChild(createField(child.rotation, 'y'));
+			d.appendChild(createField(child.rotation, 'z'));
+
+			objectProps.appendChild(d);
+		}
+
+		d = document.createElement('li');
+		d.innerHTML = 'scale: &nbsp;&nbsp;&nbsp;';
+		d.appendChild(createField(child.scale, 'x'));
+		d.appendChild(createField(child.scale, 'y'));
+		d.appendChild(createField(child.scale, 'z'));
+
+		objectProps.appendChild(d);
+		// console.log('material', child.material);
+
+	}
+
+	if (haveChildren) {
+		var ul = document.createElement('ul');
+
+		var expander = document.createElement('a');
+		expander.innerHTML = '+' + noOfChildren;
+		expander.onclick = expandScene(ul, child, name);
+		ul.appendChild(expander);
+
+		objectProps.appendChild(ul);
+	}
+
+
+	li.appendChild(objectProps);
+	dom.appendChild(li);
 }
 
 function removeObj(obj) {
@@ -697,6 +714,7 @@ function Widget(title, id, targetDom) {
 		font-family:monospace;\
 		font-size: 12px;\
 		background-color: rgba(255,255,255,0.65);\
+		text-shadow: 0px 1px 3px #ddd;\
 		text-align: center;\
 		z-index: 1985;';
 

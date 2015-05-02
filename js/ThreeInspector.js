@@ -36,10 +36,12 @@
  *	Simple properties pane
  *	Visibility checkbox
  *	Draggable Controls
+ *  Detect Cameras
+ *  Basic Material Uniforms Inspector
+ *	Object Dump Inspector
  *
  *	TODO
  *	- poll/bind add/remove changes? (use experimental Object.observe?)
- *	- detect camera
  * 	- Stats: geometry / faces / vertices count
  *	- integrate gui + director.js
  *	- color picker for lights, materials
@@ -50,7 +52,6 @@
  *	- shape editor
  *	- mouse wheel? / runner? / Shift on document?
  *	- rescan without reloading...
- *	- Inspect object on click
  */
 
 (function() {
@@ -60,7 +61,8 @@ console.log('scope', SCOPE);
 
 var autoUpdateDiv;
 var targetDom;
-var allInspectedReferences = [];
+var allInspectedObjectReferences = [];
+var allInspectedMaterialReferences = [];
 
 function getPropertiesPane() {
 	if (ThreeInspector.sidePane && !ThreeInspector.sidePane.isClosed) {
@@ -175,13 +177,17 @@ function scanWindow() {
 	for (var w in SCOPE) {
 
 		var anItem = SCOPE[w];
-		if (anItem instanceof THREE.Camera && allInspectedReferences.indexOf(anItem) === -1) {
+		if (anItem instanceof THREE.Camera && allInspectedObjectReferences.indexOf(anItem) === -1) {
+			addInspectChild(anItem, ThreeInspectorWidget.contents, others);
+			others++;
+		}
+
+		if (anItem instanceof THREE.Material && allInspectedMaterialReferences.indexOf(anItem) === -1) {
+			allInspectedMaterialReferences.push(anItem);
 			addInspectChild(anItem, ThreeInspectorWidget.contents, others);
 			others++;
 		}
 	}
-
-
 }
 
 // Function callbacks
@@ -272,10 +278,11 @@ function updateNameCallback(nameField, target) {
 	};
 }
 
-function valueChangeCallback(target, property, view) {
+function valueChangeCallback(target, property, view, optional_callback) {
 	return function(e) {
 		// console.log('value changed!',e, target);
 		target[property] = parseFloat(view.value);
+		if (optional_callback) optional_callback(target[property]);
 	};
 }
 
@@ -293,13 +300,13 @@ function createCheckbox(object, property) {
 
 }
 
-function createField(object, property) {
+function createField(object, property, optional_callback) {
 	var valueField = document.createElement('input');
 	valueField.className = 'threeInspectorValueField';
 	valueField.type = 'text';
 	valueField.value = object[property];
 
-	valueField.onchange = valueChangeCallback(object, property, valueField);
+	valueField.onchange = valueChangeCallback(object, property, valueField, optional_callback);
 
 	registerBindings(object, property, valueField);
 
@@ -430,10 +437,25 @@ function inspectChildren(scene, dom) {
 	ThreeInspectorWidget.setStatus("");
 }
 
+//
+// dom helper
+//
+function createLineItem(name, children) {
+	var d = document.createElement('li');
+	var padding = 15 - Math.min(15, name.length);
+	d.innerHTML = name + ':' + (new Array(padding).join('&nbsp'));
+
+	if (arguments.length > 1) {
+		for (var a = 1; a < arguments.length; a++) {
+			d.appendChild(arguments[a]);
+		}
+	}
+
+	return d;
+}
+
 function addInspectChild(child, dom, i) {
 	var zlass, subclass = [];
-
-	allInspectedReferences.push(child);
 
 	for (var t in THREE) {
 		if (child.constructor === THREE[t]) {
@@ -468,12 +490,6 @@ function addInspectChild(child, dom, i) {
 			child.name = "id_" + child.id;
 			name = child.name;
 		}
-	}
-
-	var noOfChildren = '';
-	var haveChildren = (child.children && child.children.length>0);
-	if (haveChildren) {
-		noOfChildren = ' <span class="threeInspectorChildrenBubble">' + child.children.length +'</span> children';
 	}
 
 	var nameField = document.createElement('input');
@@ -521,14 +537,65 @@ function addInspectChild(child, dom, i) {
 
 	var d;
 
+	if (isObject) {
+		allInspectedObjectReferences.push(child);
+	}
+
+	if (child instanceof THREE.Material) {
+		// allInspectedMaterialReferences.push(child);
+		for (var u in child.uniforms) {
+			var uniform = child.uniforms[u];
+
+			switch (uniform.type) {
+				case 'i':
+				case 'f':
+					d = createLineItem(u, createField(uniform, 'value'));
+					objectProps.appendChild(d);
+					break;
+				case 'c':
+					d = createLineItem(u
+						, createField(uniform.value, 'r')
+						, createField(uniform.value, 'g')
+						, createField(uniform.value, 'b'));
+					objectProps.appendChild(d);
+					break;
+				case 'v2':
+					d = createLineItem(u
+						, createField(uniform.value, 'x')
+						, createField(uniform.value, 'y'));
+					objectProps.appendChild(d);
+					break;
+				case 'v3':
+					d = createLineItem(u
+						, createField(uniform.value, 'x')
+						, createField(uniform.value, 'y')
+						, createField(uniform.value, 'z'));
+					objectProps.appendChild(d);
+					break;
+				case 'i':
+					d = createLineItem(u
+						, createField(uniform.value, 'x')
+						, createField(uniform.value, 'y')
+						, createField(uniform.value, 'z'));
+					objectProps.appendChild(d);
+					break;
+
+				// TODO
+				// i, fv, fv1, v2v, mv4, t
+				default:
+					// console.log(uniform);
+
+			}
+
+
+		}
+	}
+
 	if (isSprite) {
-		d = document.createElement('li');
-		d.innerHTML = 'rotation:';
-		d.appendChild(createField(child, 'rotation'));
+		d = createLineItem('rotation', createField(child, 'rotation'));
 		objectProps.appendChild(d);
 
-		d = document.createElement('li');
-		d.innerHTML = 'rotation3d:';
+		d = createLineItem('rotation3d');
 		d.appendChild(createField(child.rotation3d, 'x'));
 		d.appendChild(createField(child.rotation3d, 'y'));
 		d.appendChild(createField(child.rotation3d, 'z'));
@@ -536,18 +603,28 @@ function addInspectChild(child, dom, i) {
 		objectProps.appendChild(d);
 	}
 
+	if (isCamera) {
+		d = createLineItem('fov');
+		d.appendChild(createField(child, 'fov', function() { camera.updateProjectionMatrix() }));
+		objectProps.appendChild(d);
+
+		d = createLineItem('near, far',
+			createField(child, 'near', function() { camera.updateProjectionMatrix() }),
+			createField(child, 'far', function() { camera.updateProjectionMatrix() })
+		);
+
+		objectProps.appendChild(d);
+	}
+
 	if (child.opacity !== undefined) {
-		d = document.createElement('li');
-		d.innerHTML = 'opacity: &nbsp;';
+		d = createLineItem('opacity');
 		d.appendChild(createField(child, 'opacity'));
 		objectProps.appendChild(d);
 	}
 
 	if (isLight) {
 
-		d = document.createElement('li');
-
-		d.innerHTML = 'color: &nbsp;&nbsp;&nbsp;';
+		d = createLineItem('color');
 
 		d.appendChild(createField(child.color, 'r'));
 		d.appendChild(createField(child.color, 'g'));
@@ -557,50 +634,36 @@ function addInspectChild(child, dom, i) {
 
 		if (child.intensity) {
 
-			d = document.createElement('li');
-
-			d.innerHTML = 'intensity:';
-
+			d = createLineItem('intensity');
 			d.appendChild(createField(child, 'intensity'));
-
 			objectProps.appendChild(d);
 
 		}
 
 	}
 
-
 	if (isObject) {
 
 		// Visibility
 
-		d = document.createElement('li');
-		d.innerHTML = 'visible:  ';
+		d = createLineItem('visible');
 		var checkbox = createCheckbox(child, 'visible');
 		d.appendChild(checkbox);
 		objectProps.appendChild(d);
 
 		// Position
 
-		d = document.createElement('li');
-
-		d.innerHTML = 'position: ';
-
-		var posX = createField(child.position, 'x');
-		var posY = createField(child.position, 'y');
-		var posZ = createField(child.position, 'z');
-
-		d.appendChild(posX);
-		d.appendChild(posY);
-		d.appendChild(posZ);
+		d = createLineItem('position');
+		d.appendChild(createField(child.position, 'x'));
+		d.appendChild(createField(child.position, 'y'));
+		d.appendChild(createField(child.position, 'z'));
 
 		objectProps.appendChild(d);
 
 		// Rotation
 
 		if (!isSprite) {
-			d = document.createElement('li');
-			d.innerHTML = 'rotation: ';
+			d = createLineItem('rotation');
 			d.appendChild(createField(child.rotation, 'x'));
 			d.appendChild(createField(child.rotation, 'y'));
 			d.appendChild(createField(child.rotation, 'z'));
@@ -608,8 +671,7 @@ function addInspectChild(child, dom, i) {
 			objectProps.appendChild(d);
 		}
 
-		d = document.createElement('li');
-		d.innerHTML = 'scale: &nbsp;&nbsp;&nbsp;';
+		d = createLineItem('scale');
 		d.appendChild(createField(child.scale, 'x'));
 		d.appendChild(createField(child.scale, 'y'));
 		d.appendChild(createField(child.scale, 'z'));
@@ -617,6 +679,16 @@ function addInspectChild(child, dom, i) {
 		objectProps.appendChild(d);
 		// console.log('material', child.material);
 
+	}
+
+	///
+	// Children
+	///
+
+	var noOfChildren = '';
+	var haveChildren = (child.children && child.children.length>0);
+	if (haveChildren) {
+		noOfChildren = ' <span class="threeInspectorChildrenBubble">' + child.children.length +'</span> children';
 	}
 
 	if (haveChildren) {
@@ -690,7 +762,7 @@ function objProperties(child, zlass, subclass, id) {
 
 			if (child.color) {
 				getPropertiesPane().add('Color: HEX - #'+ child.color.getHex().toString(16) + '<br/>');
-				getPropertiesPane().add('Color: RGB - '+ child.color.getContextStyle() + '<br/>');
+				getPropertiesPane().add('Color: RGB - '+ child.color.getStyle() + '<br/>');
 			}
 
 
@@ -1033,7 +1105,7 @@ ThreeInspector.start = function() {
 	scanWindow() && autoRefresh();
 
 	// Inject this copy into window.ThreeInspector namespace
-	ThreeInspector.version = 'release3c';
+	ThreeInspector.version = 'release4a';
 	window.ThreeInspector = ThreeInspector;
 
 

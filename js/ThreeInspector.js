@@ -114,7 +114,7 @@ function scanWindow() {
 
 
 	autoUpdateDiv = document.createElement('span');
-	autoUpdateDiv.innerHTML = 'Auto-Refresh Values: <a class="threeInspectorChildrenBubble">ON</a>. ';
+	autoUpdateDiv.innerHTML = 'Auto-Refresh Values: <a class="threeInspectorChildrenBubble">OFF</a>. ';
 	autoUpdateDiv.onclick = autoRefresh;
 
 	ThreeInspectorWidget.contents.appendChild(autoUpdateDiv);

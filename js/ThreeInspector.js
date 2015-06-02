@@ -43,7 +43,7 @@
  *	TODO
  *	- poll/bind add/remove changes? (use experimental Object.observe?)
  * 	- Stats: geometry / faces / vertices count
- *	- integrate gui + director.js + timeliner.js + rstats.js?
+ *	- integrate gui.js + director.js + timeliner.js + rstats.js?
  *	- color picker for lights, materials
  *	- create interactive examples for three.js
  *	- use css for collapsing and expanding divs?
@@ -52,13 +52,16 @@
  *	- shape editor
  *	- mouse wheel? / runner? / Shift on document?
  *	- rescan without reloading...
- *  - 
+ *  - npm module
+ *  - more types eg. slider / booleans
+ *  - texture inspector
+ *  - shadow dom
  */
 
 (function() {
 
 var SCOPE = self; // self this window
-console.log('scope', SCOPE);
+// console.log('scope', SCOPE);
 
 var autoUpdateDiv;
 var targetDom;
@@ -141,6 +144,21 @@ function scanWindow() {
 
 	ThreeInspectorWidget.contents.appendChild(divDraggable);
 
+	var others = 0;
+	for (var w in SCOPE) {
+
+		var anItem = SCOPE[w];
+		if (anItem instanceof THREE.Camera && allInspectedObjectReferences.indexOf(anItem) === -1) {
+			addInspectChild(anItem, ThreeInspectorWidget.contents, w); // others
+			others++;
+		}
+
+		if (anItem instanceof THREE.Material) {
+			materialsToInspect.push(anItem);
+			materialNamesToInspect.push(w);
+		}
+	}
+
 	// Start searching for scopes
 	for (var w in SCOPE) {
 
@@ -177,21 +195,6 @@ function scanWindow() {
 
 	// ThreeInspectorWidget.setStatus(sceneNames.length + ' three.js scenes found.');
 
-	var others = 0;
-	for (var w in SCOPE) {
-
-		var anItem = SCOPE[w];
-		if (anItem instanceof THREE.Camera && allInspectedObjectReferences.indexOf(anItem) === -1) {
-			addInspectChild(anItem, ThreeInspectorWidget.contents, w); // others
-			others++;
-		}
-
-		if (anItem instanceof THREE.Material) {
-			materialsToInspect.push(anItem);
-			materialNamesToInspect.push(w);
-		}
-	}
-
 	materialsToInspect.forEach(function(material, i) {
 		if (allInspectedMaterialReferences.indexOf(material) > -1) return;
 
@@ -199,7 +202,6 @@ function scanWindow() {
 		addInspectChild(material, ThreeInspectorWidget.contents, 'material ' + i);
 		others++;
 	});
-
 }
 
 // Function callbacks
@@ -1116,7 +1118,6 @@ ThreeInspector.start = function() {
 	} else {
 
 		targetDom = document;
-
 
 		var style = document.createElement('style');
 		style.innerHTML = styles;

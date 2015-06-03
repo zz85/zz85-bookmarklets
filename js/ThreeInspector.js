@@ -39,6 +39,7 @@
  *  Detect Cameras
  *  Basic Material Uniforms Inspector
  *	Object Dump Inspector
+ *  Shadow Dom support for compartmentalizing styling
  *
  *	TODO
  *	- poll/bind add/remove changes? (use experimental Object.observe?)
@@ -55,7 +56,6 @@
  *  - npm module
  *  - more types eg. slider / booleans
  *  - texture inspector
- *  - shadow dom
  */
 
 (function() {
@@ -332,8 +332,7 @@ function createField(object, property, optional_callback) {
 	var multiplierX = 0.01;
 
 	function onMouseDown(event) {
-		// EEKS!
-		// event.preventDefault();
+		event.stopImmediatePropagation();
 
 		y = event.clientY;
 		x = event.clientX;
@@ -388,8 +387,6 @@ function createField(object, property, optional_callback) {
 	}
 
 	function onMouseMove(event) {
-		// event.preventDefault();
-
 		y = event.clientY;
 		x = event.clientX;
 
@@ -409,8 +406,6 @@ function createField(object, property, optional_callback) {
 		// valueField.focus();
 		valueField.select();
 		multiplierY = defaultMultiplier;
-
-
 	}
 
 	valueField.addEventListener('mousedown',  onMouseDown, false);
@@ -420,7 +415,6 @@ function createField(object, property, optional_callback) {
 }
 
 function inspectChildren(scene, dom) {
-
 	var i,il;
 	var maxWait = 10 * 1000; // 10 seconds wait
 
@@ -805,7 +799,8 @@ var styles = '\
 	}\
 	#threeInspectorWidget ul {\
 		list-style: none; padding-left: 10px;\
-		padding-top:0; }\
+		padding-top:0;\
+	}\
 	#threeInspectorWidget li {\
 		padding-left: 10px;\
 		padding-top:0;\
@@ -833,7 +828,7 @@ var styles = '\
 	}\
 	.threeInspectorValueField {\
 		border-radius: 4px;\
-		background-color: rgba(244, 100, 200, 0.8);\
+		background-color: rgba(100, 100, 100, 0.8);\
 		color: rgb(220, 220,220);\
 		padding: 0 3px 0 3px;\
 		margin: 0 3px 0 3px;\
@@ -849,7 +844,16 @@ var styles = '\
 	#threeInspectorWidget li.threeInspectorSceneObject {\
 		padding-top: 6px;\
 	}\
-	\
+	::-webkit-scrollbar {\
+		width: 12px;  /* for vertical scrollbars */\
+		height: 12px; /* for horizontal scrollbars */\
+	}\
+	::-webkit-scrollbar-track {\
+		background: rgba(0, 0, 0, 0.1);\
+	}\
+	::-webkit-scrollbar-thumb {\
+		background: rgba(0, 0, 0, 0.3);\
+	}\
 ';
 
 // Windowing Widget experiment
@@ -865,17 +869,17 @@ function Widget(title, id, targetDom) {
 		top: 100px;\
 		left: 190px;\
 		font-family:monospace;\
-		font-size: 12px;\
-		background-color: rgba(255,255,255,0.65);\
-		text-shadow: 0px 1px 3px #333;\
-		text-align: center;\
+		font-size: 11.5px;\
+		background-color: rgba(255,255,255,0.6);\
+		color: #333;\
+		text-shadow: 0px 1px 2px #ccc;\
 		z-index: 1985;';
 
 	var cssWidgetTitle =
 		'background-color: grey;\
 		font-weight: bold;\
-		background: -moz-linear-gradient(top, #fff 0%, #ddd 100%);\
-		background-image: -webkit-gradient(linear, 0% 0%, 0% 100%, from(#fff), to(#ddd));\
+		background: linear-gradient(to bottom, #fff 0%, #ddd 100%);\
+		text-align: center;\
 		cursor: move;\
 		padding: 2px 12px 2px 12px;';
 
@@ -900,7 +904,6 @@ function Widget(title, id, targetDom) {
 		right: 30;\
 		padding: 2px 15px 2px 15px;';
 
-
 	var divWidget = document.createElement('div');
 	var divWidgetTitle = document.createElement('div');
 	var divWidgetContent = document.createElement('div');
@@ -913,6 +916,14 @@ function Widget(title, id, targetDom) {
 	if (divWidget.createShadowRoot) {
 		var shadowRoot = divWidget.createShadowRoot();
 		divWidget2 = shadowRoot;
+
+		styles = styles.replace(/#threeInspectorWidget/g, function() {
+			return ':host';
+		});
+		// styles = styles.replace(/#threeInspectorWidget/, function() {
+		// 	return ':host';
+		// }).replace(/#threeInspectorWidget/g, '');
+		// console.log(styles);
 		divWidget2.innerHTML = '<style>' + styles + '</style>';
 	}
 
@@ -941,6 +952,7 @@ function Widget(title, id, targetDom) {
 	function onMouseDown(e) {
 
 		e.preventDefault();
+		e.stopImmediatePropagation();
 
 		x = e.clientX;
 		y = e.clientY;
@@ -992,7 +1004,6 @@ function Widget(title, id, targetDom) {
 	// APIs
 
 	this.setTitle = function(title) {
-
 		divWidgetTitle.innerHTML = title;
 
 		var close = document.createElement('a');
@@ -1010,7 +1021,6 @@ function Widget(title, id, targetDom) {
 		span.appendChild(close);
 
 		divWidgetTitle.appendChild(span);
-
 	};
 
 	this.setStatus = function(status) {
@@ -1079,7 +1089,6 @@ function Widget(title, id, targetDom) {
 	this.setTitle(title);
 
 	return this;
-
 }
 
 // Main entry
@@ -1094,7 +1103,7 @@ ThreeInspector.start = function() {
 	}
 
 	// Inject this copy into window.ThreeInspector namespace
-	ThreeInspector.version = '4a';
+	ThreeInspector.version = '4b';
 
 	if (ThreeInspector.newWindow) {
 
@@ -1129,10 +1138,12 @@ ThreeInspector.start = function() {
 		targetDom = document;
 
 		if (!document.body.createShadowRoot) {
-			console.log('injecting styles into body');
 			var style = document.createElement('style');
 			style.innerHTML = styles;
 			targetDom.body.appendChild(style);
+		}
+		else {
+			// console.log('shadow root');
 		}
 
 		ThreeInspectorWidget = new Widget('Three.js Inspector ' + ThreeInspector.version, 'threeInspectorWidget', targetDom);

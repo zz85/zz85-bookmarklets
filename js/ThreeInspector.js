@@ -560,6 +560,24 @@ function addInspectChild(child, dom, i) {
 
 	if (child instanceof THREE.Material) {
 		// allInspectedMaterialReferences.push(child);
+
+		// ambient
+		// emissive
+		for (var k in child) {
+			var color = child[k];
+			if (color instanceof THREE.Color) {
+				d = createLineItem(k);
+
+				d.appendChild(createField(color, 'r'));
+				d.appendChild(createField(color, 'g'));
+				d.appendChild(createField(color, 'b'));
+
+				d.appendChild(colorPicker(color));
+
+				objectProps.appendChild(d);
+			}
+		}
+
 		for (var u in child.uniforms) {
 			var uniform = child.uniforms[u];
 
@@ -639,6 +657,20 @@ function addInspectChild(child, dom, i) {
 		objectProps.appendChild(d);
 	}
 
+	function colorPicker(color) {
+		// registerBindings(object, property, valueField);
+
+		var picker = document.createElement('input');
+		picker.type = 'color';
+		picker.value = '#' + color.getHexString()
+		picker.onchange = function(e) {
+			color.setStyle(this.value);
+			console.log(color);
+		}
+
+		return picker;
+	}
+
 	if (isLight) {
 
 		d = createLineItem('color');
@@ -646,6 +678,8 @@ function addInspectChild(child, dom, i) {
 		d.appendChild(createField(child.color, 'r'));
 		d.appendChild(createField(child.color, 'g'));
 		d.appendChild(createField(child.color, 'b'));
+
+		d.appendChild(colorPicker(child.color));
 
 		objectProps.appendChild(d);
 

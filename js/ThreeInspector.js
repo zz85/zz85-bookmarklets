@@ -40,12 +40,12 @@
  *  Basic Material Uniforms Inspector
  *	Object Dump Inspector
  *  Shadow Dom support for compartmentalizing styling
+ *	color picker for lights, materials
  *
  *	TODO
  *	- poll/bind add/remove changes? (use experimental Object.observe?)
  * 	- Stats: geometry / faces / vertices count
  *	- integrate gui.js + director.js + timeliner.js + rstats.js?
- *	- color picker for lights, materials
  *	- create interactive examples for three.js
  *	- use css for collapsing and expanding divs?
  *	- materials editor
@@ -56,6 +56,7 @@
  *  - npm module
  *  - more types eg. slider / booleans
  *  - texture inspector
+ *  - checkboxes and slider types.
  */
 
 (function() {
@@ -462,6 +463,48 @@ function createLineItem(name, children) {
 	return d;
 }
 
+function colorPicker(color, r, g, b) {
+	// TODO add watch bindings for color picker
+	// registerBindings(object, property, valueField);
+
+	var picker = document.createElement('input');
+	picker.type = 'color';
+
+	picker.onchange = function(e) {
+		color.setStyle(this.value);
+		r.value = color.r;
+		g.value = color.g;
+		b.value = color.b;
+	}
+
+	return picker;
+}
+
+function createColorLineItem(name, color) {
+	var d = createLineItem(name);
+
+	var r, g, b, picker;
+
+	r = createField(color, 'r', colorChanged);
+	g = createField(color, 'g', colorChanged);
+	b = createField(color, 'b', colorChanged);
+	picker = colorPicker(color, r, g, b);
+
+	function colorChanged() {
+		picker.value = '#' + color.getHexString();
+	}
+
+	d.appendChild(r);
+	d.appendChild(g);
+	d.appendChild(b);
+	d.appendChild(picker);
+
+	colorChanged();
+
+	return d;
+}
+
+
 function addInspectChild(child, dom, i) {
 	var zlass, subclass = [];
 
@@ -560,20 +603,11 @@ function addInspectChild(child, dom, i) {
 
 	if (child instanceof THREE.Material) {
 		// allInspectedMaterialReferences.push(child);
-
-		// ambient
-		// emissive
 		for (var k in child) {
 			var color = child[k];
 			if (color instanceof THREE.Color) {
-				d = createLineItem(k);
-
-				d.appendChild(createField(color, 'r'));
-				d.appendChild(createField(color, 'g'));
-				d.appendChild(createField(color, 'b'));
-
-				d.appendChild(colorPicker(color));
-
+				// color, ambient, emissive
+				d = createColorLineItem(k, color);
 				objectProps.appendChild(d);
 			}
 		}
@@ -588,10 +622,7 @@ function addInspectChild(child, dom, i) {
 					objectProps.appendChild(d);
 					break;
 				case 'c':
-					d = createLineItem(u
-						, createField(uniform.value, 'r')
-						, createField(uniform.value, 'g')
-						, createField(uniform.value, 'b'));
+					d = createColorLineItem(u, uniform.value);
 					objectProps.appendChild(d);
 					break;
 				case 'v2':
@@ -657,30 +688,9 @@ function addInspectChild(child, dom, i) {
 		objectProps.appendChild(d);
 	}
 
-	function colorPicker(color) {
-		// registerBindings(object, property, valueField);
-
-		var picker = document.createElement('input');
-		picker.type = 'color';
-		picker.value = '#' + color.getHexString()
-		picker.onchange = function(e) {
-			color.setStyle(this.value);
-			console.log(color);
-		}
-
-		return picker;
-	}
-
 	if (isLight) {
 
-		d = createLineItem('color');
-
-		d.appendChild(createField(child.color, 'r'));
-		d.appendChild(createField(child.color, 'g'));
-		d.appendChild(createField(child.color, 'b'));
-
-		d.appendChild(colorPicker(child.color));
-
+		d = createColorLineItem('color', child.color);
 		objectProps.appendChild(d);
 
 		if (child.intensity) {
@@ -1137,7 +1147,7 @@ ThreeInspector.start = function() {
 	}
 
 	// Inject this copy into window.ThreeInspector namespace
-	ThreeInspector.version = '4b';
+	ThreeInspector.version = '5a';
 
 	if (ThreeInspector.newWindow) {
 

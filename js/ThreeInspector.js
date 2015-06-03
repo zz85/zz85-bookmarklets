@@ -793,6 +793,64 @@ function objProperties(child, zlass, subclass, id) {
 		}
 	}
 
+// Three Inspector styles
+var styles = '\
+	#threeInspectorWidget {\
+		all:initial;\
+		cursor:default;\
+	}\
+	#threeInspectorWidget a {\
+		text-decoration: none;\
+		cursor:pointer;\
+	}\
+	#threeInspectorWidget ul {\
+		list-style: none; padding-left: 10px;\
+		padding-top:0; }\
+	#threeInspectorWidget li {\
+		padding-left: 10px;\
+		padding-top:0;\
+		padding-bottom: 0\
+	}\
+	\
+	.threeInspectorChildrenBubble {\
+		border-radius: 4px;\
+		background-color: rgba(100, 100, 100, 0.8);\
+		color: rgb(220, 220,220);\
+		padding: 0 3px 0 3px;\
+	}\
+	.threeInspectorNameField {\
+		font-weight: bold;\
+		padding: 0 4px 0 4px;\
+		background:transparent;\
+		resize:none;\
+		border: 0;\
+		width: 50px;\
+		border-bottom: 1px dotted #bbb;\
+	}\
+	.threeInspectorNameField:hover {\
+		\
+		border-bottom: 1px dotted grey;\
+	}\
+	.threeInspectorValueField {\
+		border-radius: 4px;\
+		background-color: rgba(244, 100, 200, 0.8);\
+		color: rgb(220, 220,220);\
+		padding: 0 3px 0 3px;\
+		margin: 0 3px 0 3px;\
+		resize:none;\
+		border: 0;\
+		width: 50px;\
+		cursor:row-resize;\
+	}\
+	#threeInspectorWidget input:focus {\
+		outline: none;\
+	}\
+	\
+	#threeInspectorWidget li.threeInspectorSceneObject {\
+		padding-top: 6px;\
+	}\
+	\
+';
 
 // Windowing Widget experiment
 
@@ -849,14 +907,24 @@ function Widget(title, id, targetDom) {
 	var divWidgetStatus = document.createElement('div');
 
 	divWidget.id = id;
+
+	var divWidget2 = divWidget;
+
+	if (divWidget.createShadowRoot) {
+		var shadowRoot = divWidget.createShadowRoot();
+		divWidget2 = shadowRoot;
+		divWidget2.innerHTML = '<style>' + styles + '</style>';
+	}
+
 	divWidget.style.cssText = cssWidget;
+
 	divWidgetTitle.style.cssText = cssWidgetTitle;
 	divWidgetContent.style.cssText = cssWidgetContent;
 	divWidgetStatus.style.cssText = cssWidgetStatus;
 
-	divWidget.appendChild(divWidgetTitle);
-	divWidget.appendChild(divWidgetContent);
-	divWidget.appendChild(divWidgetStatus);
+	divWidget2.appendChild(divWidgetTitle);
+	divWidget2.appendChild(divWidgetContent);
+	divWidget2.appendChild(divWidgetStatus);
 
 	// Event listeners
 	divWidgetTitle.addEventListener('mousedown', onMouseDown, false);
@@ -1019,64 +1087,6 @@ function Widget(title, id, targetDom) {
 var ThreeInspector = {}, ThreeInspectorWidget;
 
 ThreeInspector.start = function() {
-	var styles = '\
-		#threeInspectorWidget {\
-			cursor:default;\
-		}\
-		#threeInspectorWidget a {\
-			text-decoration: none;\
-			cursor:pointer;\
-		}\
-		#threeInspectorWidget ul {\
-			list-style: none; padding-left: 10px;\
-			padding-top:0; }\
-		#threeInspectorWidget li {\
-			padding-left: 10px;\
-			padding-top:0;\
-			padding-bottom: 0\
-		}\
-		\
-		.threeInspectorChildrenBubble {\
-			border-radius: 4px;\
-			background-color: rgba(100, 100, 100, 0.8);\
-			color: rgb(220, 220,220);\
-			padding: 0 3px 0 3px;\
-		}\
-		.threeInspectorNameField {\
-			font-weight: bold;\
-			padding: 0 4px 0 4px;\
-			background:transparent;\
-			resize:none;\
-			border: 0;\
-			width: 50px;\
-			border-bottom: 1px dotted #bbb;\
-		}\
-		.threeInspectorNameField:hover {\
-			\
-			border-bottom: 1px dotted grey;\
-		}\
-		.threeInspectorValueField {\
-			border-radius: 4px;\
-			background-color: rgba(244, 100, 200, 0.8);\
-			color: rgb(220, 220,220);\
-			padding: 0 3px 0 3px;\
-			margin: 0 3px 0 3px;\
-			resize:none;\
-			border: 0;\
-			width: 50px;\
-			cursor:row-resize;\
-		}\
-		#threeInspectorWidget input:focus {\
-			outline: none;\
-		}\
-		\
-		#threeInspectorWidget li.threeInspectorSceneObject {\
-			padding-top: 6px;\
-		}\
-		\
-	';
-
-
 	// Destory previous copy of ThreeInspector.
 	if (window.ThreeInspector) {
 		window.ThreeInspector.destory();
@@ -1116,12 +1126,15 @@ ThreeInspector.start = function() {
 
 
 	} else {
-
 		targetDom = document;
 
-		var style = document.createElement('style');
-		style.innerHTML = styles;
-		targetDom.body.appendChild(style);
+		if (!document.body.createShadowRoot) {
+			console.log('injecting styles into body');
+			var style = document.createElement('style');
+			style.innerHTML = styles;
+			targetDom.body.appendChild(style);
+		}
+
 		ThreeInspectorWidget = new Widget('Three.js Inspector ' + ThreeInspector.version, 'threeInspectorWidget', targetDom);
 		ThreeInspectorWidget.setSize(420, 264);
 		ThreeInspectorWidget.setPosition(0, window.innerHeight - ThreeInspectorWidget.div.clientHeight );

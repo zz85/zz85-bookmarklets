@@ -23,8 +23,26 @@
 
 	<p>
 	<h2>Updates</h2>
+		<h3>version 5a - 4 June 15 - color picker</h3>
 		<p>
-		v4a - detects cameras and shader materials uniforms<br/>
+			Color types is now detected from Lights, Materials, Color typed Uniforms in ShaderMaterials. It is integrated with HTML5 color input type which utilizes the system's color picker. This allows easy yet rich way to edit colors, as well as getting access to the system's color dropper.<br/>
+			<img src="screenshots/color_picker.png" />
+		</p>
+
+		<h3>version 4b - 3 June 15 - shadow dom</h3>
+		<p>
+		Allow better integration with websites using shadow dom support. If shadow dom support is detected, styles and doms are inserted into the shadowRoot, allowing a cleaner encapsulation of styles, and preventing the host application's styles to override those in ThreeInpector.
+		<br/>
+		<h4>After:</h4>
+		<img src="screenshots/after_shadow_dom.png" />
+
+		<h4>Before:</h4>
+		<img src="screenshots/before_shadow_dom.png" />
+		</p>
+
+		<h3>version 4a</h3>
+		<p>
+		detects cameras and shader materials uniforms<br/>
 		<img src="screenshots/material_uniforms.png" />
 		</p>
 	</p>

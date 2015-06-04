@@ -907,16 +907,18 @@ function Widget(title, id, targetDom) {
 	var me = this;
 	targetDom = (targetDom === undefined) ? document.body : targetDom;
 
+	var cssCommons =
+		'font-family:monospace;\
+		font-size: 11.5px;\
+		background-color: rgba(255,255,255,0.6);\
+		color: #333;\
+		text-shadow: 0px 1px 2px #ccc;';
+
 	var cssWidget =
 		'border: 1px solid rgba(100,100,100,0.5);\
 		position: fixed;\
 		top: 100px;\
 		left: 190px;\
-		font-family:monospace;\
-		font-size: 11.5px;\
-		background-color: rgba(255,255,255,0.6);\
-		color: #333;\
-		text-shadow: 0px 1px 2px #ccc;\
 		z-index: 1985;';
 
 	var cssWidgetTitle =
@@ -949,6 +951,8 @@ function Widget(title, id, targetDom) {
 		padding: 2px 15px 2px 15px;';
 
 	var divWidget = document.createElement('div');
+	targetDom.body.appendChild(divWidget);
+
 	var divWidgetTitle = document.createElement('div');
 	var divWidgetContent = document.createElement('div');
 	var divWidgetStatus = document.createElement('div');
@@ -964,14 +968,34 @@ function Widget(title, id, targetDom) {
 		styles = styles.replace(/#threeInspectorWidget/g, function() {
 			return ':host';
 		});
-		// styles = styles.replace(/#threeInspectorWidget/, function() {
-		// 	return ':host';
-		// }).replace(/#threeInspectorWidget/g, '');
-		// console.log(styles);
 		divWidget2.innerHTML = '<style>' + styles + '</style>';
+	} else {
+		iframe = document.createElement('iframe');
+		iframe.src = 'about:blank';
+		divWidget.appendChild(iframe);
+
+		iframe.frameBorder = '0';
+		iframe.scrolling = 'no';
+		iframe.marginWidth = '0';
+		iframe.marginHeight = '0';
+		iframe.hspace = '0';
+		iframe.vspace = '0';
+		iframe.allowTransparency = 'true';
+		iframe.contentDocument.write('<html><body></body></html>');
+		iframe.contentDocument.close();
+		iframe.seamless = 'seamless'; // !! http://benvinegar.github.io/seamless-talk/#/39
+		
+		divWidget2 = iframe.contentDocument.body;
+		var style = document.createElement('style');
+		style.innerHTML = styles.replace(/#threeInspectorWidget/g, '');
+		divWidget2.appendChild(style);
+		divWidget2.style.cssText = cssCommons;
+		// hack to use content in frame instead!
+		divWidgetContent = divWidget2;
+		divWidget2 = divWidget;
 	}
 
-	divWidget.style.cssText = cssWidget;
+	divWidget.style.cssText = cssWidget + cssCommons;
 
 	divWidgetTitle.style.cssText = cssWidgetTitle;
 	divWidgetContent.style.cssText = cssWidgetContent;
@@ -1124,8 +1148,6 @@ function Widget(title, id, targetDom) {
 		me.isClosed = true;
 	}
 
-	targetDom.body.appendChild(divWidget);
-
 	this.contents = divWidgetContent;
 	this.div = divWidget;
 
@@ -1181,14 +1203,14 @@ ThreeInspector.start = function() {
 	} else {
 		targetDom = document;
 
-		if (!document.body.createShadowRoot) {
-			var style = document.createElement('style');
-			style.innerHTML = styles;
-			targetDom.body.appendChild(style);
-		}
-		else {
-			// console.log('shadow root');
-		}
+		// if (!document.body.createShadowRoot) {
+		// 	var style = document.createElement('style');
+		// 	style.innerHTML = styles;
+		// 	targetDom.body.appendChild(style);
+		// }
+		// else {
+		// 	// console.log('shadow root');
+		// }
 
 		ThreeInspectorWidget = new Widget('Three.js Inspector ' + ThreeInspector.version, 'threeInspectorWidget', targetDom);
 		ThreeInspectorWidget.setSize(420, 264);

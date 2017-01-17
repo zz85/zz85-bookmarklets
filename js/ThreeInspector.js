@@ -43,7 +43,7 @@
  *	color picker for lights, materials
  *
  *	TODO
- *	- poll/bind add/remove changes? (use experimental Object.observe?)
+ *	- poll/bind add/remove changes?
  * 	- Stats: geometry / faces / vertices count
  *	- integrate gui.js + director.js + timeliner.js + rstats.js?
  *	- create interactive examples for three.js
@@ -172,6 +172,9 @@ function scanWindow() {
 
 			var ul = document.createElement('ul');
 			ul.innerHTML = ' &lt;THREE.Scene&gt; <span class="threeInspectorChildrenBubble">' + children.length + '</span> children';
+
+			if (aScene.fog)
+				ul.appendChild(createColorLineItem('fog', aScene.fog.color));
 
 			var expander = document.createElement('a');
 			expander.innerHTML = '+ <b>' + w + '</b>';
@@ -902,7 +905,7 @@ var styles = '\
 
 // Windowing Widget experiment
 
-function Widget(title, id, targetDom) {
+function Widget(title, id, targetDom, method) {
 
 	var me = this;
 	targetDom = (targetDom === undefined) ? document.body : targetDom;
@@ -961,7 +964,7 @@ function Widget(title, id, targetDom) {
 
 	var divWidget2 = divWidget;
 
-	if (divWidget.createShadowRoot) {
+	if (method === 'shadowDom') {
 		var shadowRoot = divWidget.createShadowRoot();
 		divWidget2 = shadowRoot;
 
@@ -969,7 +972,7 @@ function Widget(title, id, targetDom) {
 			return ':host';
 		});
 		divWidget2.innerHTML = '<style>' + styles + '</style>';
-	} else {
+	} else if (method === 'iframe') {
 		iframe = document.createElement('iframe');
 		iframe.src = 'about:blank';
 		divWidget.appendChild(iframe);
@@ -984,7 +987,7 @@ function Widget(title, id, targetDom) {
 		iframe.contentDocument.write('<html><body></body></html>');
 		iframe.contentDocument.close();
 		iframe.seamless = 'seamless'; // !! http://benvinegar.github.io/seamless-talk/#/39
-		
+
 		divWidget2 = iframe.contentDocument.body;
 		var style = document.createElement('style');
 		style.innerHTML = styles.replace(/#threeInspectorWidget/g, '');
@@ -1203,16 +1206,21 @@ ThreeInspector.start = function() {
 	} else {
 		targetDom = document;
 
-		// if (!document.body.createShadowRoot) {
-		// 	var style = document.createElement('style');
-		// 	style.innerHTML = styles;
-		// 	targetDom.body.appendChild(style);
-		// }
-		// else {
-		// 	// console.log('shadow root');
-		// }
+		var shadowRoot = !!document.body.createShadowRoot;
+		var iframe = false;
 
-		ThreeInspectorWidget = new Widget('Three.js Inspector ' + ThreeInspector.version, 'threeInspectorWidget', targetDom);
+		var type = shadowRoot ? 'shadowDom' :
+			iframe ? 'iframe' :  'dom';
+
+		if (type == 'dom') {
+			var style = document.createElement('style');
+			style.innerHTML = styles;
+			targetDom.body.appendChild(style);
+		}
+
+		console.log('method', type);
+
+		ThreeInspectorWidget = new Widget('Three.js Inspector ' + ThreeInspector.version, 'threeInspectorWidget', targetDom, type);
 		ThreeInspectorWidget.setSize(420, 264);
 		ThreeInspectorWidget.setPosition(0, window.innerHeight - ThreeInspectorWidget.div.clientHeight );
 	}

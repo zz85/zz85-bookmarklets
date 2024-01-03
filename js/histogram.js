@@ -17,12 +17,13 @@
 	var paint_color = true;
 	var lastData;
 	var alerted = false;
+	var scaleFunc = percentileMax;
 
 	function setupHistogram() {
 
 		if (hist) return;
 		hist = document.createElement('canvas');
-		hist.style.cssText = 'position:fixed; z-index: 8888; left:0; top: 0';
+		hist.style.cssText = 'position:fixed; z-index: 8888; left: 5px; top: 5px; cursor: pointer;';
 		ctx_hist = hist.getContext('2d');
 
 		hist.width = 256;
@@ -32,6 +33,11 @@
 
 		hist.onclick = function() {
 			paint_color = !paint_color;
+			if (lastData) drawHistogram(lastData);
+		}
+
+		hist.ondblclick = () => {
+			scaleFunc = scaleFunc == getMax ? percentileMax : getMax;
 			if (lastData) drawHistogram(lastData);
 		}
 
@@ -45,13 +51,10 @@
 		ctx_hist.fillStyle = '#888';
 		ctx_hist.fillRect(0, 0, hist.width, hist.height);
 
-		var stats_r = [], stats_g = [], stats_b = [], stats_l = [];
-
-		var i;
-
-		for ( i = 0; i < 256; i ++ ){
-			stats_r[i] = stats_g[i] = stats_b[i] = stats_l[i] = 0;
-		}
+		var stats_r = new Array(256).fill(0);
+		var stats_g = new Array(256).fill(0);
+		var stats_b = new Array(256).fill(0);
+		var stats_l = new Array(256).fill(0);
 
 		for (var j=0, jl = data.length; j<jl; j+=4) {
 			var r = data[j];
@@ -65,19 +68,42 @@
 			stats_l[~~l]++;
 		}
 
-		var maxpixels = Number.NEGATIVE_INFINITY;
-		for ( i = 0; i < 256; i ++ ) {
-			maxpixels = Math.max(maxpixels, stats_l[i]);
-		}
+		var maxpixels = scaleFunc(stats_l)
 
 		if (paint_color) {
+			// var maxpixels = Math.max(percentileMax(stats_r), percentileMax(stats_g), percentileMax(stats_b))
+			var maxpixels = scaleFunc(stats_r.concat(stats_g).concat(stats_b))
 			paint('red', stats_r, maxpixels);
 			paint('green', stats_g, maxpixels);
 			paint('blue', stats_b, maxpixels);
+			// individual scaling
+			// paint('red', stats_r, percentileMax(stats_r));
+			// paint('green', stats_g, percentileMax(stats_g));
+			// paint('blue', stats_b, percentileMax(stats_b));
 		} else {
 			paint('grey', stats_l, maxpixels);
 		}
 
+	}
+
+	// max pixels
+	function getMax(array) {
+		return Math.max(...array);
+	}
+
+	// average
+	function percentileMax(array) {
+		var sorted = array.slice();
+		sorted.sort((a, b) => a - b);
+		// TM99
+		const percentile = 1; // 0.99
+		const cutoff = array.length * percentile | 0;
+		var avg = sorted.slice(0, cutoff).reduce((sum, current) => {
+			return sum + current;
+		}, 0);
+		// magic number seems to be between 2 and 4 for avg scaling
+		var maxpixels = avg * 3.75 / cutoff / percentile;
+		return maxpixels
 	}
 
 	function paint(color, stats, max) {

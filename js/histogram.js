@@ -120,11 +120,11 @@
 		ctx_hist.fill();
 	}
 
+	var canvas = document.createElement('canvas');
+
 	var encodeImg = function(e) {
-		var canvas = document.createElement('canvas');
 		canvas.setAttribute('width', this.width);
 		canvas.setAttribute('height', this.height);
-
 		var ctx = canvas.getContext('2d');
 		ctx.drawImage(this,0,0);
 		try {
@@ -148,4 +148,22 @@
 		imgs[i].onmouseover = encodeImg;
 	}
 
+	var videos = [...document.querySelectorAll('video')];
+	var v = videos[0];
+	if (v) {
+		canvas.setAttribute('width', v.videoWidth);
+		canvas.setAttribute('height', v.videoHeight);
+		var ctx = canvas.getContext('2d');
+
+		v.ontimeupdate = () => {
+			try {
+				ctx.drawImage(v,0,0);
+				var image = ctx.getImageData(0,0,canvas.width,canvas.height)
+				var data = image.data;
+				drawHistogram(data);
+			} catch (e) {
+				console.error(e);
+			}
+		}
+	}
 })();

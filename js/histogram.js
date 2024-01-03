@@ -3,7 +3,7 @@
 	// To use bookmark
 	// javascript:(function(){var script=document.createElement('script');script.type='text/javascript';script.src='https://github.com/zz85/zz85-bookmarklets/raw/master/js/histogram.js';document.body.appendChild(script);})()
 
-	// i was experimenting some image processing using html5 canvas 
+	// i was experimenting some image processing using html5 canvas
 	// when i thought it would be a good idea to create a histogram
 	// to help analysis colors.
 
@@ -16,19 +16,20 @@
 	var hist, ctx_hist;
 	var paint_color = true;
 	var lastData;
+	var alerted = false;
 
 	function setupHistogram() {
 
 		if (hist) return;
 		hist = document.createElement('canvas');
-		hist.style.cssText = 'position:absolute; z-index: 8888; left:0; top: 0'
+		hist.style.cssText = 'position:fixed; z-index: 8888; left:0; top: 0';
 		ctx_hist = hist.getContext('2d');
-	
+
 		hist.width = 256;
 		hist.height = 100;
 
 		ctx_hist.globalCompositeOperation = 'lighter';
-		
+
 		hist.onclick = function() {
 			paint_color = !paint_color;
 			if (lastData) drawHistogram(lastData);
@@ -45,7 +46,7 @@
 		ctx_hist.fillRect(0, 0, hist.width, hist.height);
 
 		var stats_r = [], stats_g = [], stats_b = [], stats_l = [];
-		
+
 		var i;
 
 		for ( i = 0; i < 256; i ++ ){
@@ -74,7 +75,7 @@
 			paint('green', stats_g, maxpixels);
 			paint('blue', stats_b, maxpixels);
 		} else {
-			paint('grey', stats_l, maxpixels);	
+			paint('grey', stats_l, maxpixels);
 		}
 
 	}
@@ -105,7 +106,10 @@
 			var data = image.data;
 			drawHistogram(data);
 		} catch (e) {
-			alert('Exception probably caused by image hosted on another domain. Open image in a new tab and try running script on it. :P');
+			if (!alerted) {
+				alert('Exception probably caused by image hosted on another domain. Open image in a new tab and try running script on it. :P');
+				alerted = true;
+			}
 			console.log(e);
 		}
 		return false;
@@ -115,7 +119,7 @@
 	var imgs = document.getElementsByTagName('img');
 
 	for (var i = imgs.length;i--; ) {
-		imgs[i].onclick = encodeImg;
+		imgs[i].onmouseover = encodeImg;
 	}
 
 })();
